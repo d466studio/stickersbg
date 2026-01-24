@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Админ • Цветове</title>
+  <title>Admin • BG STICKERS</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
       <div class="logoMark">A</div>
       <div class="brandText">
         <div class="brandName">ADMIN</div>
-        <div class="brandTag">управление на налични цветове</div>
+        <div class="brandTag">управление на цветове</div>
       </div>
     </div>
     <nav class="nav">
@@ -21,11 +21,31 @@
   </header>
 
   <main class="container">
-    <section class="card">
+
+    <!-- Password gate -->
+    <section class="card" id="adminGate">
+      <h1>Вход</h1>
+      <p class="muted">Въведи парола за достъп до admin панела.</p>
+
+      <div class="row2">
+        <label>
+          Парола
+          <input type="password" id="adminPass" placeholder="••••••" />
+        </label>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btnPrimary" id="btnLogin" type="button">Вход</button>
+        </div>
+      </div>
+
+      <p class="muted small" id="gateHint"></p>
+    </section>
+
+    <!-- Panel (hidden until login) -->
+    <section class="card" id="adminPanel" style="display:none">
       <h1>Налични цветове</h1>
       <p class="muted">
-        В GitHub Pages не можем да “запишем” промени на сървъра. Тук редактираш списъка локално и:
-        <b>Export</b> → копираш → заменяш <b>colors.json</b> в GitHub.
+        В GitHub Pages това е статичен сайт. Тук редактираш списъка локално и:
+        <b>Export</b> → заменяш <b>colors.json</b> в GitHub repo.
       </p>
 
       <div class="divider"></div>
@@ -57,6 +77,7 @@
         </div>
       </div>
     </section>
+
   </main>
 
   <script src="admin.js"></script>
