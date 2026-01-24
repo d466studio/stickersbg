@@ -2,13 +2,13 @@
 // CONFIG (EDIT THESE)
 // =====================
 const CONFIG = {
-  brandName: "VINYL STUDIO",
+  brandName: "BG STICKERS",
+  instagram: "@thebgstickers",
 
   // Put your form endpoint here (Formspree / Getform etc.)
   // Example: "https://formspree.io/f/xxxxxxx"
   formEndpoint: "",
 
-  // Optional: show in messages
   contactEmail: "you@example.com"
 };
 
@@ -28,7 +28,9 @@ function setActivePage(route) {
 
   const titles = {
     "nachalo": "НАЧАЛО",
+    "galeria": "ГАЛЕРИЯ",
     "nadpisi": "НАДПИСИ",
+    "stikeri": "СТИКЕРИ",
     "avto": "АВТО",
     "print": "ПРИНТ СТИКЕР",
     "za-nas": "ЗА НАС"
@@ -67,6 +69,7 @@ function renderColorDock(colors) {
 }
 
 function fillColorSelect(selectEl, colors) {
+  if (!selectEl) return;
   selectEl.innerHTML = "";
   colors.forEach(c => {
     const opt = document.createElement("option");
@@ -74,9 +77,102 @@ function fillColorSelect(selectEl, colors) {
     opt.textContent = c.name;
     selectEl.appendChild(opt);
   });
-  // default to yellow if exists
   const yellow = colors.find(c => c.name.toLowerCase().includes("жъл"));
   if (yellow) selectEl.value = yellow.hex;
+}
+
+// Multi-color checkbox renderer
+function renderColorMulti(containerEl, hiddenEl, colors, defaults = 1) {
+  containerEl.innerHTML = "";
+
+  // pick default first N colors, prefer Yellow as first if exists
+  const yellowIdx = colors.findIndex(c => c.name.toLowerCase().includes("жъл"));
+  const defaultSet = new Set();
+  if (yellowIdx >= 0) defaultSet.add(colors[yellowIdx].hex);
+  for (const c of colors) {
+    if (defaultSet.size >= defaults) break;
+    defaultSet.add(c.hex);
+  }
+
+  colors.forEach(c => {
+    const id = `c_${Math.random().toString(16).slice(2)}`;
+    const label = document.createElement("label");
+    label.className = "colorChk";
+    label.setAttribute("for", id);
+
+    const dot = document.createElement("span");
+    dot.className = "colorDot";
+    dot.style.background = c.hex;
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = id;
+    checkbox.value = c.hex;
+    checkbox.checked = defaultSet.has(c.hex);
+
+    const txt = document.createElement("span");
+    txt.textContent = c.name;
+
+    label.appendChild(checkbox);
+    label.appendChild(dot);
+    label.appendChild(txt);
+
+    containerEl.appendChild(label);
+  });
+
+  const updateHidden = () => {
+    const chosen = [...containerEl.querySelectorAll("input[type=checkbox]:checked")]
+      .map(x => x.value);
+
+    // Ensure at least 1 selected
+    if (chosen.length === 0) {
+      const first = containerEl.querySelector("input[type=checkbox]");
+      first.checked = true;
+    }
+
+    const chosen2 = [...containerEl.querySelectorAll("input[type=checkbox]:checked")]
+      .map(x => x.value);
+
+    hiddenEl.value = chosen2.join(",");
+
+    // return chosen as array
+    return chosen2;
+  };
+
+  containerEl.addEventListener("change", updateHidden);
+  return updateHidden();
+}
+
+function getSelectedColorsFromHidden(hiddenEl) {
+  const v = (hiddenEl.value || "").trim();
+  if (!v) return [];
+  return v.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+// ---------------------
+// Pricing
+// ---------------------
+function basePriceByWidth(widthCm) {
+  const w = Number(widthCm || 0);
+  if (w <= 10) return 10;
+  if (w > 10 && w <= 50) return 15;
+  if (w > 50 && w <= 100) return 17;
+  if (w > 100 && w <= 150) return 20;
+  if (w > 150 && w <= 200) return 20;
+  return 20;
+}
+
+// extraColors = selected - 1
+function estimatePrice({ widthCm, selectedColorsCount, extraBase = 0 }) {
+  const base = basePriceByWidth(widthCm) + extraBase;
+  const extraColors = Math.max(0, (selectedColorsCount || 1) - 1);
+  const extra = extraColors * 3;
+  return {
+    base,
+    extraColors,
+    extra,
+    total: base + extra
+  };
 }
 
 // ---------------------
@@ -84,7 +180,7 @@ function fillColorSelect(selectEl, colors) {
 // ---------------------
 const POPULAR_TEXTS = [
   { title: "LOW & SLOW", meta: "Текст • чист стил", pills: ["едноцветно", "бързо"] },
-  { title: "NO RISK NO FUN", meta: "Текст • спорт", pills: ["едноцветно", "лесно лепене"] },
+  { title: "NO RISK NO FUN", meta: "Текст • спорт", pills: ["едноцветно"] },
   { title: "STANCE", meta: "Късо • агресивно", pills: ["компактно"] },
   { title: "TURBO", meta: "Текст • минимал", pills: ["едноцветно"] },
   { title: "DRIVEN", meta: "Текст • clean", pills: ["популярно"] },
@@ -94,7 +190,7 @@ const POPULAR_TEXTS = [
 const AUTO_BY_BRAND = {
   "BMW": [
     { title: "Windshield Banner (BMW)", meta: "Предно стъкло", pills: ["банер", "чист текст"] },
-    { title: "Side stripes (M-style)", meta: "Странично", pills: ["спорт", "двойка"] },
+    { title: "Side stripes (M-style)", meta: "Странично", pills: ["спорт"] },
     { title: "Rear text (BMW club)", meta: "Задно", pills: ["минимал"] }
   ],
   "VW": [
@@ -159,33 +255,95 @@ function initTabs() {
 }
 
 // ---------------------
-// Live preview (НАДПИСИ)
+// Live preview + pricing (НАДПИСИ)
 // ---------------------
-function updateNadpisiPreview() {
+function updateNadpisiPreviewAndPrice() {
   const text = document.getElementById("npText").value || "YOUR TEXT";
   const width = Number(document.getElementById("npWidth").value || 40);
-
   const font = document.getElementById("npFont").value;
-  const color = document.getElementById("npColor").value;
+
+  const hidden = document.getElementById("npColorsHidden");
+  const colors = getSelectedColorsFromHidden(hidden);
+  const mainColor = colors[0] || "#ffd400";
 
   const previewText = document.getElementById("npPreviewText");
   previewText.textContent = text;
   previewText.style.fontFamily = `${font}, Roboto, sans-serif`;
-  previewText.style.color = color;
+  previewText.style.color = mainColor;
 
-  // Scale roughly by width (visual only)
   const size = Math.max(18, Math.min(72, width * 1.0));
   previewText.style.fontSize = `${size}px`;
 
   document.getElementById("npRulerText").textContent = `~${width} см`;
+
+  const est = estimatePrice({ widthCm: width, selectedColorsCount: Math.max(1, colors.length), extraBase: 0 });
+  document.getElementById("npPrice").textContent = `${est.total}€  (база ${est.base}€ + ${est.extra}€ за ${est.extraColors} доп. цвят/цвята)`;
 }
 
-function initPreviewHandlers() {
-  ["npText","npWidth","npFont","npColor"].forEach(id => {
+function initNadpisiHandlers() {
+  ["npText","npWidth","npFont"].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.addEventListener("input", updateNadpisiPreview);
-    if (el) el.addEventListener("change", updateNadpisiPreview);
+    if (el) el.addEventListener("input", updateNadpisiPreviewAndPrice);
+    if (el) el.addEventListener("change", updateNadpisiPreviewAndPrice);
   });
+
+  const multi = document.getElementById("npColorMulti");
+  if (multi) multi.addEventListener("change", updateNadpisiPreviewAndPrice);
+}
+
+// ---------------------
+// Live preview + pricing (СТИКЕРИ)
+// ---------------------
+function updateStikeriPreviewAndPrice() {
+  const text = document.getElementById("stText").value || "BG STICKERS";
+  const width = Number(document.getElementById("stWidth").value || 40);
+  const font = document.getElementById("stFont").value;
+
+  const hidden = document.getElementById("stColorsHidden");
+  const colors = getSelectedColorsFromHidden(hidden);
+  const mainColor = colors[0] || "#ffd400";
+
+  const previewText = document.getElementById("stPreviewText");
+  previewText.textContent = text;
+  previewText.style.fontFamily = `${font}, Roboto, sans-serif`;
+  previewText.style.color = mainColor;
+
+  const size = Math.max(18, Math.min(72, width * 1.0));
+  previewText.style.fontSize = `${size}px`;
+
+  document.getElementById("stRulerText").textContent = `~${width} см`;
+
+  // +2€ extraBase for design (not simple text)
+  const est = estimatePrice({ widthCm: width, selectedColorsCount: Math.max(1, colors.length), extraBase: 2 });
+  document.getElementById("stPrice").textContent = `${est.total}€  (база ${est.base}€ + ${est.extra}€ за ${est.extraColors} доп. цвят/цвята)`;
+}
+
+function initStikeriHandlers() {
+  ["stText","stWidth","stFont"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("input", updateStikeriPreviewAndPrice);
+    if (el) el.addEventListener("change", updateStikeriPreviewAndPrice);
+  });
+
+  const multi = document.getElementById("stColorMulti");
+  if (multi) multi.addEventListener("change", updateStikeriPreviewAndPrice);
+
+  // thumbnail preview
+  const f = document.getElementById("stFile");
+  const img = document.getElementById("stThumb");
+  if (f && img) {
+    f.addEventListener("change", () => {
+      const file = f.files && f.files[0];
+      if (!file) {
+        img.style.display = "none";
+        img.src = "";
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      img.style.display = "block";
+    });
+  }
 }
 
 // ---------------------
@@ -215,14 +373,14 @@ function initBrandDropdown() {
 // ---------------------
 async function postForm(formEl, hintEl, extra) {
   if (!CONFIG.formEndpoint) {
-    hintEl.textContent = `⚠️ Няма зададен formEndpoint. Добави endpoint (Formspree/Getform) в app.js. Междувременно: направи screenshot/копирай данните и прати на ${CONFIG.contactEmail}.`;
+    hintEl.textContent =
+      `⚠️ Няма зададен formEndpoint. Добави endpoint (Formspree/Getform) в app.js. Междувременно: копирай данните и пиши на ${CONFIG.instagram} или ${CONFIG.contactEmail}.`;
     return;
   }
 
   hintEl.textContent = "Изпращане...";
   const fd = new FormData(formEl);
 
-  // Add context
   Object.entries(extra || {}).forEach(([k,v]) => fd.append(k, v));
 
   try {
@@ -234,9 +392,15 @@ async function postForm(formEl, hintEl, extra) {
 
     if (res.ok) {
       formEl.reset();
-      hintEl.textContent = "✅ Заявката е изпратена! Ще се свържем с теб за потвърждение.";
-      // Update preview defaults after reset
-      updateNadpisiPreview();
+      hintEl.textContent = "✅ Заявката е изпратена! Ще се свържем за потвърждение.";
+
+      // hide thumb if exists
+      const stThumb = document.getElementById("stThumb");
+      if (stThumb) { stThumb.style.display = "none"; stThumb.src = ""; }
+
+      // refresh estimates
+      updateNadpisiPreviewAndPrice();
+      updateStikeriPreviewAndPrice();
     } else {
       hintEl.textContent = "❌ Грешка при изпращане. Опитай пак или пиши директно в Instagram.";
     }
@@ -251,6 +415,14 @@ function initForms() {
     f1.addEventListener("submit", (e) => {
       e.preventDefault();
       postForm(f1, document.getElementById("npSubmitHint"), { type: "nadpisi_custom" });
+    });
+  }
+
+  const fS = document.getElementById("formStikeri");
+  if (fS) {
+    fS.addEventListener("submit", (e) => {
+      e.preventDefault();
+      postForm(fS, document.getElementById("stSubmitHint"), { type: "stikeri_custom" });
     });
   }
 
@@ -280,8 +452,20 @@ function initForms() {
   const colors = await loadColors();
   renderColorDock(colors);
 
-  // Fill selects with colors
-  fillColorSelect(document.getElementById("npColor"), colors);
+  // Multi color selectors
+  const npMulti = document.getElementById("npColorMulti");
+  const npHidden = document.getElementById("npColorsHidden");
+  if (npMulti && npHidden) {
+    renderColorMulti(npMulti, npHidden, colors, 1);
+  }
+
+  const stMulti = document.getElementById("stColorMulti");
+  const stHidden = document.getElementById("stColorsHidden");
+  if (stMulti && stHidden) {
+    renderColorMulti(stMulti, stHidden, colors, 1);
+  }
+
+  // single color selects
   fillColorSelect(document.getElementById("avtoColor"), colors);
 
   // Popular grids
@@ -289,7 +473,8 @@ function initForms() {
 
   initTabs();
   initBrandDropdown();
-  initPreviewHandlers();
+  initNadpisiHandlers();
+  initStikeriHandlers();
   initForms();
 
   // Router
@@ -299,6 +484,7 @@ function initForms() {
   window.addEventListener("hashchange", onRoute);
   onRoute();
 
-  // initial preview
-  updateNadpisiPreview();
+  // initial estimates
+  updateNadpisiPreviewAndPrice();
+  updateStikeriPreviewAndPrice();
 })();
