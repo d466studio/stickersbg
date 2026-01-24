@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Винил студио</title>
+
+  <!-- Fonts (Cyrillic-safe) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logoMark">V</div>
+      <div class="brandText">
+        <div class="brandName" id="brandName">VINYL STUDIO</div>
+        <div class="brandTag">авто надписи • винил • стикери</div>
+      </div>
+    </div>
+
+    <nav class="nav">
+      <a href="#nachalo" data-route="nachalo" class="navLink">НАЧАЛО</a>
+      <a href="#nadpisi" data-route="nadpisi" class="navLink">НАДПИСИ</a>
+      <a href="#avto" data-route="avto" class="navLink">АВТО</a>
+      <a href="#print" data-route="print" class="navLink">ПРИНТ СТИКЕР</a>
+      <a href="#za-nas" data-route="za-nas" class="navLink">ЗА НАС</a>
+    </nav>
+
+    <a class="adminLink" href="admin.html" target="_blank" rel="noopener">Админ</a>
+  </header>
+
+  <main class="container">
+
+    <!-- НАЧАЛО -->
+    <section class="page" id="page-nachalo" data-page="nachalo">
+      <div class="hero">
+        <div class="heroText">
+          <h1>Винил надписи и авто стикери</h1>
+          <p class="muted">
+            Основно работим с <b>авто надписи и tuning декали</b>, но можем да изработим и избрани винил надписи за други приложения.
+            За принт стикери работим по предоставено изображение.
+          </p>
+
+          <div class="ctaRow">
+            <a class="btn btnPrimary" href="#avto">Виж АВТО</a>
+            <a class="btn" href="#nadpisi">Виж НАДПИСИ</a>
+            <a class="btn btnGhost" href="#print">ПРИНТ СТИКЕР</a>
+          </div>
+
+          <div class="chips">
+            <span class="chip">Бърза комуникация</span>
+            <span class="chip">Ясни опции</span>
+            <span class="chip">Без сложни дизайни</span>
+          </div>
+        </div>
+
+        <div class="heroCard">
+          <div class="heroCardTop">
+            <div class="badge">Галерия стил</div>
+            <div class="badge badgeYellow">Черно / Жълто</div>
+          </div>
+          <div class="heroCardBody">
+            <div class="mockPhoto">
+              <div class="mockPhotoLine"></div>
+              <div class="mockDecal">YOUR TEXT</div>
+              <div class="mockSub">windshield • side • rear</div>
+            </div>
+            <p class="muted small">
+              Сайтът е “заявки”, не приема плащания. Изпращате детайли → ние потвърждаваме цена/срок.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>Как работи</h2>
+          <ol class="list">
+            <li>Избираш готов дизайн или правиш заявка</li>
+            <li>Изпращаш размер/цвят/снимка</li>
+            <li>Получаваш потвърждение и оферта</li>
+          </ol>
+        </div>
+
+        <div class="card">
+          <h2>Ограничения (за по-бързо)</h2>
+          <ul class="list">
+            <li>Работим най-добре със <b>чисти форми/текст</b></li>
+            <li>Не правим сложни илюстрации/рисунки</li>
+            <li>При принт: нужно е изображение с добра резолюция</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- НАДПИСИ -->
+    <section class="page" id="page-nadpisi" data-page="nadpisi">
+      <div class="pageHead">
+        <h1>НАДПИСИ</h1>
+        <p class="muted">Винил надписи (рязано фолио). Избираш готово или поръчваш текст по твоя идея.</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tabBtn active" data-tab="nadpisi-pop">ПОПУЛЯРНИ</button>
+        <button class="tabBtn" data-tab="nadpisi-custom">ПО ПОРЪЧКА</button>
+      </div>
+
+      <div class="tabPanel active" id="tab-nadpisi-pop">
+        <div class="cardsGrid" id="nadpisiPopularGrid"></div>
+      </div>
+
+      <div class="tabPanel" id="tab-nadpisi-custom">
+        <div class="grid2">
+          <div class="card">
+            <h2>Поръчай надпис</h2>
+
+            <form class="form" id="formNadpisi">
+              <label>
+                Текст
+                <input type="text" name="text" id="npText" placeholder="Пример: LOW & SLOW" maxlength="40" required />
+              </label>
+
+              <div class="row2">
+                <label>
+                  Размер (ширина, см)
+                  <input type="number" name="widthCm" id="npWidth" min="5" max="200" value="40" required />
+                </label>
+                <label>
+                  Височина (см, по желание)
+                  <input type="number" name="heightCm" id="npHeight" min="2" max="50" placeholder="auto" />
+                </label>
+              </div>
+
+              <div class="row2">
+                <label>
+                  Шрифт
+                  <select name="font" id="npFont" required>
+                    <option value="Oswald">Oswald</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Russo One">Russo One</option>
+                    <option value="PT Sans">PT Sans</option>
+                    <option value="Exo 2">Exo 2</option>
+                    <option value="Roboto" selected>Roboto</option>
+                  </select>
+                </label>
+
+                <label>
+                  Цвят
+                  <select name="color" id="npColor" required></select>
+                </label>
+              </div>
+
+              <label>
+                Контакт (телефон/Instagram)
+                <input type="text" name="contact" placeholder="@instagram или +359..." required />
+              </label>
+
+              <label>
+                Бележка (по желание)
+                <textarea name="note" rows="3" placeholder="Къде ще се лепи? Предно/странично/задно..."></textarea>
+              </label>
+
+              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <p class="muted small" id="npSubmitHint"></p>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>Live preview</h2>
+            <p class="muted small">Прегледът е ориентировъчен (цвят/шрифт/пропорции).</p>
+
+            <div class="previewWrap">
+              <div class="previewRuler">
+                <span id="npRulerText">~40 см</span>
+              </div>
+              <div class="previewBox" id="npPreviewBox">
+                <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
+              </div>
+              <div class="muted small">Съвет: за по-чист резултат избери кратък текст.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- АВТО -->
+    <section class="page" id="page-avto" data-page="avto">
+      <div class="pageHead">
+        <h1>АВТО</h1>
+        <p class="muted">Тунинг декали, банери, странични надписи и др. Готови предложения + заявка по пример.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <div class="cardHeadRow">
+            <h2>ПОПУЛЯРНИ</h2>
+            <div class="inline">
+              <span class="muted small">Марка:</span>
+              <select id="brandSelect" class="selectCompact"></select>
+            </div>
+          </div>
+          <div class="cardsGrid" id="avtoPopularGrid"></div>
+        </div>
+
+        <div class="card">
+          <h2>ПО ПОРЪЧКА</h2>
+          <form class="form" id="formAvtoCustom">
+            <label>
+              Качи пример (снимка/скица) *
+              <input type="file" name="file" accept="image/*" required />
+            </label>
+
+            <div class="row2">
+              <label>
+                Размер (см)
+                <input type="text" name="size" placeholder="Пример: 120x15" required />
+              </label>
+              <label>
+                Цвят
+                <select name="color" id="avtoColor" required></select>
+              </label>
+            </div>
+
+            <label>
+              Описание
+              <textarea name="description" rows="4" placeholder="Къде се лепи? Какъв стил? Текст, позиция, брой..." required></textarea>
+            </label>
+
+            <label>
+              Контакт (телефон/Instagram)
+              <input type="text" name="contact" placeholder="@instagram или +359..." required />
+            </label>
+
+            <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+            <p class="muted small" id="avtoSubmitHint"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ПРИНТ СТИКЕР -->
+    <section class="page" id="page-print" data-page="print">
+      <div class="pageHead">
+        <h1>ПРИНТ СТИКЕР</h1>
+        <p class="muted">
+          Пълноцветен принт стикер по предоставено изображение (външен печат). Опция “втори план”.
+          <b>Макс размер: A4</b>.
+        </p>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>Заявка за принт</h2>
+          <form class="form" id="formPrint">
+            <label>
+              Качи изображение *
+              <input type="file" name="file" accept="image/*" required />
+            </label>
+
+            <div class="row2">
+              <label>
+                Размер (см) — макс A4
+                <input type="text" name="size" placeholder="Пример: 20x25" required />
+              </label>
+              <label>
+                Ламинация / финиш (по желание)
+                <select name="finish">
+                  <option value="none">без</option>
+                  <option value="gloss">гланц</option>
+                  <option value="matte">мат</option>
+                </select>
+              </label>
+            </div>
+
+            <label>
+              Описание
+              <textarea name="description" rows="4" placeholder="Брой, изрязване по контур/правоъгълник, употреба (вътре/вън)..." required></textarea>
+            </label>
+
+            <label>
+              Контакт (телефон/Instagram)
+              <input type="text" name="contact" placeholder="@instagram или +359..." required />
+            </label>
+
+            <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+            <p class="muted small" id="printSubmitHint"></p>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Бележки</h2>
+          <ul class="list">
+            <li>Най-добър резултат: снимка/файл с висока резолюция</li>
+            <li>При нужда можем да откажем много ниско качество</li>
+            <li>Максимален размер: <b>A4</b> (ориентировъчно 21×29.7 см)</li>
+          </ul>
+          <div class="divider"></div>
+          <p class="muted small">
+            Ако искаш “сложен дизайн”, това е принт вариантът. Винилът е за чист текст/форми.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ЗА НАС -->
+    <section class="page" id="page-za-nas" data-page="za-nas">
+      <div class="pageHead">
+        <h1>ЗА НАС</h1>
+        <p class="muted">Кратко представяне + контакти.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>Кои сме</h2>
+          <p>
+            Ние сме студио за винил надписи и авто декали — фокус върху чисти, четливи и устойчиви решения.
+            Работим със стандартни опции за по-бърза изработка и по-малко “сложни заявки”.
+          </p>
+          <p class="muted small">
+            Тук можеш да добавиш твоята история, локация, работно време и стил на работа.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Контакт</h2>
+          <div class="contactList">
+            <div><span class="k">Instagram:</span> <span class="v">@YOUR_HANDLE</span></div>
+            <div><span class="k">Телефон:</span> <span class="v">+359 XXX XXX XXX</span></div>
+            <div><span class="k">Email:</span> <span class="v">you@example.com</span></div>
+            <div><span class="k">Град:</span> <span class="v">София</span></div>
+          </div>
+
+          <div class="divider"></div>
+          <p class="muted small">
+            Плащания не се приемат през сайта. След заявка потвърждаваме цена/срок и начин за доставка.
+          </p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom color dock -->
+  <footer class="dock" id="colorDock">
+    <div class="dockInner">
+      <div class="dockTitle">Налични цветове:</div>
+      <div class="swatches" id="swatches"></div>
+      <div class="dockHint muted small">Цветовете се управляват от admin.html → Export colors.json</div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

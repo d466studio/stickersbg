@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="bg">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Админ • Цветове</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logoMark">A</div>
+      <div class="brandText">
+        <div class="brandName">ADMIN</div>
+        <div class="brandTag">управление на налични цветове</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a class="navLink" href="index.html#nachalo">Към сайта</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h1>Налични цветове</h1>
+      <p class="muted">
+        В GitHub Pages не можем да “запишем” промени на сървъра. Тук редактираш списъка локално и:
+        <b>Export</b> → копираш → заменяш <b>colors.json</b> в GitHub.
+      </p>
+
+      <div class="divider"></div>
+
+      <div class="row2">
+        <div>
+          <h2>Редактор</h2>
+          <div id="colorEditor"></div>
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+            <button class="btn btnPrimary" id="btnAdd">+ Добави</button>
+            <button class="btn" id="btnSaveLocal">Запази локално</button>
+            <button class="btn" id="btnClearLocal">Изчисти локално</button>
+          </div>
+        </div>
+
+        <div>
+          <h2>Export / Import</h2>
+          <label>
+            Export JSON (постави в colors.json)
+            <textarea id="exportBox" rows="12" spellcheck="false"></textarea>
+          </label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btnPrimary" id="btnExport">Export</button>
+            <button class="btn" id="btnImport">Import</button>
+          </div>
+
+          <p class="muted small" id="adminHint"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
