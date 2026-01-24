@@ -14,7 +14,9 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logoMark">BG</div>
+      <div class="logoBox">
+        <img class="logoImg" src="assets/logo.png" alt="BG STICKERS logo" />
+      </div>
       <div class="brandText">
         <div class="brandName" id="brandName">BG STICKERS</div>
         <div class="brandTag">авто надписи • винил • стикери</div>
@@ -100,24 +102,26 @@
     <section class="page" id="page-galeria" data-page="galeria">
       <div class="pageHead">
         <h1>ГАЛЕРИЯ</h1>
-        <p class="muted">Готови проекти. (Ще добавиш снимки по-късно.)</p>
+        <p class="muted">Готови проекти. Добавяш нови само в <b>gallery.json</b>.</p>
       </div>
 
       <div class="card">
-        <h2>Проекти</h2>
-        <p class="muted small">
-          Сложи снимките в папка <b>/gallery</b> и после ще заменим тези placeholder-и с реални.
-        </p>
+        <div class="galleryTop">
+          <div>
+            <h2>Проекти</h2>
+            <p class="muted small">Филтър (по желание): тагове от gallery.json</p>
+          </div>
 
-        <div class="galleryGrid" id="galleryGrid">
-          <!-- placeholders -->
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">BMW • банер</div></div>
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">VW • странични</div></div>
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">AUDI • заден текст</div></div>
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">STICKER • custom</div></div>
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">TRACK • номера</div></div>
-          <div class="galleryItem"><div class="galleryPh"></div><div class="galleryCap">MINI • clean</div></div>
+          <div class="inline">
+            <span class="muted small">Таг:</span>
+            <select id="galleryTag" class="selectCompact">
+              <option value="all">Всички</option>
+            </select>
+          </div>
         </div>
+
+        <div class="galleryGrid" id="galleryGrid"></div>
+        <p class="muted small" id="galleryHint"></p>
       </div>
     </section>
 
@@ -173,14 +177,19 @@
                 </label>
 
                 <label>
-                  Цветове (можеш да избереш повече)
-                  <div class="colorMulti" id="npColorMulti"></div>
-                  <input type="hidden" name="colors" id="npColorsHidden" />
-                  <p class="muted small">
-                    Ако са 2+ цвята, напиши в бележката кои букви да са в различен цвят.
-                  </p>
+                  Основен цвят (за preview)
+                  <select name="mainColor" id="npMainColor" required></select>
                 </label>
               </div>
+
+              <label>
+                Доп. цветове (по желание)
+                <div class="colorMulti" id="npExtraColors"></div>
+                <input type="hidden" name="extraColors" id="npExtraColorsHidden" />
+                <p class="muted small">
+                  Ако са 2+ цвята, напиши в бележката кои букви/части да са в различен цвят.
+                </p>
+              </label>
 
               <div class="priceLine">
                 <div class="muted small">Ориентировъчна цена:</div>
@@ -194,17 +203,20 @@
 
               <label>
                 Бележка (по желание)
-                <textarea name="note" rows="3" placeholder="Къде ще се лепи? Ако има 2+ цвята: кои букви да са друг цвят..."></textarea>
+                <textarea name="note" rows="3" placeholder="Къде ще се лепи? Ако има доп. цветове: кои букви/части..."></textarea>
               </label>
 
-              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <div class="btnRow">
+                <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+                <button class="btn" type="button" id="npCopy">Копирай резюме</button>
+              </div>
               <p class="muted small" id="npSubmitHint"></p>
             </form>
           </div>
 
           <div class="card">
             <h2>Live preview</h2>
-            <p class="muted small">Прегледът е ориентировъчен (цветове/шрифт/пропорции).</p>
+            <p class="muted small">Preview показва само <b>основния цвят</b> (дори да има доп. цветове).</p>
 
             <div class="previewWrap">
               <div class="previewRuler">
@@ -213,18 +225,17 @@
               <div class="previewBox" id="npPreviewBox">
                 <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
               </div>
-              <div class="muted small">Показваме основния (първия) избран цвят.</div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- СТИКЕРИ ПО ПОРЪЧКА -->
+    <!-- СТИКЕРИ -->
     <section class="page" id="page-stikeri" data-page="stikeri">
       <div class="pageHead">
         <h1>СТИКЕРИ</h1>
-        <p class="muted">Стикери по поръчка (по предоставен пример). Включва качване на изображение.</p>
+        <p class="muted">Стикери по поръчка (по предоставен пример). +2€ към базата.</p>
       </div>
 
       <div class="grid2">
@@ -267,14 +278,16 @@
               </label>
 
               <label>
-                Цветове (можеш да избереш повече)
-                <div class="colorMulti" id="stColorMulti"></div>
-                <input type="hidden" name="colors" id="stColorsHidden" />
-                <p class="muted small">
-                  Ако са 2+ цвята, напиши кои елементи/букви да са в различен цвят.
-                </p>
+                Основен цвят (за preview)
+                <select name="mainColor" id="stMainColor" required></select>
               </label>
             </div>
+
+            <label>
+              Доп. цветове (по желание)
+              <div class="colorMulti" id="stExtraColors"></div>
+              <input type="hidden" name="extraColors" id="stExtraColorsHidden" />
+            </label>
 
             <div class="priceLine">
               <div class="muted small">Ориентировъчна цена:</div>
@@ -283,7 +296,7 @@
 
             <label>
               Описание
-              <textarea name="description" rows="4" placeholder="Къде се лепи? Брой? Контур/форма? Ако има 2+ цвята: кои части да са друг цвят..." required></textarea>
+              <textarea name="description" rows="4" placeholder="Къде се лепи? Брой? Контур/форма? Ако има доп. цветове: кои части..." required></textarea>
             </label>
 
             <label>
@@ -291,14 +304,17 @@
               <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
             </label>
 
-            <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+            <div class="btnRow">
+              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn" type="button" id="stCopy">Копирай резюме</button>
+            </div>
             <p class="muted small" id="stSubmitHint"></p>
           </form>
         </div>
 
         <div class="card">
           <h2>Live preview</h2>
-          <p class="muted small">Прегледът е ориентировъчен. Показваме текст + thumbnail на качения файл.</p>
+          <p class="muted small">Preview показва само <b>основния цвят</b>. Thumbnail показва качения файл.</p>
 
           <div class="previewWrap">
             <div class="previewRuler">
@@ -312,9 +328,7 @@
               </div>
             </div>
 
-            <p class="muted small">
-              Цената тук е +2€ към базовата (защото не е прост текст).
-            </p>
+            <p class="muted small">Цената е +2€ към базата (дизайн, не само текст).</p>
           </div>
         </div>
       </div>
@@ -368,7 +382,10 @@
               <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
             </label>
 
-            <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+            <div class="btnRow">
+              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn" type="button" id="avCopy">Копирай резюме</button>
+            </div>
             <p class="muted small" id="avtoSubmitHint"></p>
           </form>
         </div>
@@ -380,8 +397,7 @@
       <div class="pageHead">
         <h1>ПРИНТ СТИКЕР</h1>
         <p class="muted">
-          Пълноцветен принт стикер (външен печат) — вторичен вариант.
-          <b>Макс размер: A4</b>.
+          Пълноцветен принт стикер (външен печат) — вторичен вариант. <b>Макс размер: A4</b>.
         </p>
       </div>
 
@@ -419,7 +435,10 @@
               <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
             </label>
 
-            <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+            <div class="btnRow">
+              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn" type="button" id="prCopy">Копирай резюме</button>
+            </div>
             <p class="muted small" id="printSubmitHint"></p>
           </form>
         </div>
@@ -428,7 +447,6 @@
           <h2>Бележки</h2>
           <ul class="list">
             <li>Най-добър резултат: изображение с висока резолюция</li>
-            <li>Може да откажем много ниско качество</li>
             <li>Макс размер: <b>A4</b> (21×29.7 см)</li>
           </ul>
         </div>
@@ -449,9 +467,6 @@
             <b>BG STICKERS</b> — студио за винил надписи и авто декали, фокус върху clean резултат и ясни опции.
             Работим със заявки и потвърждаваме цена/срок след като видим детайлите.
           </p>
-          <p class="muted small">
-            (Тук можеш да добавиш локация, работно време, начин на доставка.)
-          </p>
         </div>
 
         <div class="card">
@@ -460,13 +475,7 @@
             <div><span class="k">Instagram:</span> <span class="v">@thebgstickers</span></div>
             <div><span class="k">Телефон:</span> <span class="v">+359 XXX XXX XXX</span></div>
             <div><span class="k">Email:</span> <span class="v">you@example.com</span></div>
-            <div><span class="k">Град:</span> <span class="v">София</span></div>
           </div>
-
-          <div class="divider"></div>
-          <p class="muted small">
-            Плащания не се приемат през сайта. След заявка потвърждаваме цена/срок.
-          </p>
         </div>
       </div>
     </section>
@@ -478,9 +487,7 @@
     <div class="dockInner">
       <div class="dockTitle">Налични цветове:</div>
       <div class="swatches" id="swatches"></div>
-
       <a class="dockAdmin" href="admin.html" target="_blank" rel="noopener" title="Admin">⚙</a>
-      <div class="dockHint muted small">Admin → редактирай цветове → Export colors.json</div>
     </div>
   </footer>
 
