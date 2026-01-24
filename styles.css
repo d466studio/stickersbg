@@ -386,3 +386,35 @@ input:focus, textarea:focus, select:focus{
   border-color: rgba(255,212,0,.35);
   background: rgba(255,212,0,.08);
 }
+/* Dropdown-style multi select */
+.dd{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+  border-radius:12px;
+  padding:6px;
+}
+.dd > summary{
+  cursor:pointer;
+  list-style:none;
+  font-weight:900;
+  padding:10px 12px;
+  border-radius:10px;
+  background: rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+}
+.dd > summary::-webkit-details-marker{display:none}
+.dd[open] > summary{
+  border-color: rgba(255,212,0,.35);
+  background: rgba(255,212,0,.06);
+}
+.ddMenu{
+  margin-top:8px;
+  padding:8px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.22);
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
