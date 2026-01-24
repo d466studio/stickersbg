@@ -5,7 +5,6 @@
   --text:#e9eef6;
   --muted:#9aa6b2;
   --yellow:#ffd400;
-  --yellow2:#ffcc00;
   --line:#1c232d;
   --shadow: 0 10px 30px rgba(0,0,0,.45);
   --radius:18px;
@@ -34,7 +33,7 @@ body{
 
 .brand{display:flex; align-items:center; gap:12px; min-width: 220px}
 .logoMark{
-  width:40px;height:40px;border-radius:12px;
+  width:44px;height:40px;border-radius:12px;
   background: linear-gradient(135deg, var(--yellow), #ff9f00);
   color:#000; font-weight:900;
   display:flex; align-items:center; justify-content:center;
@@ -47,7 +46,7 @@ body{
 .navLink{
   color:var(--text);
   text-decoration:none;
-  font-weight:700;
+  font-weight:900;
   font-size:13px;
   padding:10px 12px;
   border-radius:12px;
@@ -56,19 +55,8 @@ body{
 .navLink:hover{border-color: rgba(255,212,0,.25); background: rgba(255,212,0,.06)}
 .navLink.active{border-color: rgba(255,212,0,.45); background: rgba(255,212,0,.08)}
 
-.adminLink{
-  margin-left:auto;
-  color:#000;
-  text-decoration:none;
-  font-weight:900;
-  background: var(--yellow);
-  padding:10px 12px;
-  border-radius:12px;
-  border:1px solid rgba(0,0,0,.2);
-}
-
 /* Layout */
-.container{max-width:1100px; margin:0 auto; padding:26px 18px 110px}
+.container{max-width:1100px; margin:0 auto; padding:26px 18px 120px}
 .page{display:none}
 .page.active{display:block}
 
@@ -122,7 +110,7 @@ body{
 .heroCard{border-radius: var(--radius); overflow:hidden}
 .heroCardTop{display:flex; gap:8px; padding:14px 14px 0}
 .badge{
-  font-size:12px; font-weight:800;
+  font-size:12px; font-weight:900;
   padding:6px 10px;
   border-radius:999px;
   background: rgba(255,255,255,.06);
@@ -149,7 +137,7 @@ body{
 .mockDecal{
   position:absolute; left:18px; bottom:42px;
   font-family:Russo One, Oswald, sans-serif;
-  font-size:28px;
+  font-size:24px;
   letter-spacing:1px;
   color: var(--yellow);
   text-shadow: 0 10px 30px rgba(0,0,0,.65);
@@ -203,7 +191,7 @@ body{
 
 /* Forms */
 .form{display:flex; flex-direction:column; gap:12px}
-label{display:flex; flex-direction:column; gap:6px; font-weight:800; font-size:13px}
+label{display:flex; flex-direction:column; gap:6px; font-weight:900; font-size:13px}
 input, textarea, select{
   background: rgba(0,0,0,.25);
   border:1px solid rgba(255,255,255,.12);
@@ -238,21 +226,19 @@ input:focus, textarea:focus, select:focus{
   color:#000;
 }
 .btnGhost{background: transparent}
+
 .inline{display:flex; align-items:center; gap:10px}
 .selectCompact{padding:8px 10px; border-radius:12px}
 
 /* Preview */
 .previewWrap{display:flex; flex-direction:column; gap:10px}
-.previewRuler{
-  display:flex; justify-content:flex-end;
-  color:var(--muted); font-size:12px;
-}
+.previewRuler{display:flex; justify-content:flex-end; color:var(--muted); font-size:12px}
 .previewBox{
   border-radius:16px;
   border:1px dashed rgba(255,255,255,.14);
   background: rgba(0,0,0,.28);
   padding:18px;
-  min-height:120px;
+  min-height:140px;
   display:flex; align-items:center; justify-content:center;
   overflow:hidden;
 }
@@ -264,9 +250,80 @@ input:focus, textarea:focus, select:focus{
   white-space:nowrap;
 }
 
+/* Multi-color selector */
+.colorMulti{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  padding:10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.18);
+}
+.colorChk{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  cursor:pointer;
+  user-select:none;
+}
+.colorDot{
+  width:16px;height:16px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.18);
+}
+.colorChk input{accent-color: var(--yellow);}
+
+/* Price line */
+.priceLine{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,212,0,.22);
+  background: rgba(255,212,0,.06);
+}
+.priceValue{
+  font-weight:900;
+  color: var(--yellow);
+}
+
+/* Gallery */
+.galleryGrid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:12px;
+  margin-top:12px;
+}
+@media (max-width: 940px){ .galleryGrid{grid-template-columns:1fr} }
+
+.galleryItem{
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.22);
+  overflow:hidden;
+}
+.galleryPh{
+  height:160px;
+  background: radial-gradient(300px 140px at 30% 30%, rgba(255,212,0,.10), transparent 70%),
+              rgba(255,255,255,.04);
+}
+.galleryCap{
+  padding:10px 12px;
+  font-weight:900;
+  font-size:12px;
+  color: var(--muted);
+}
+
 /* Misc */
 .divider{height:1px; background: var(--line); margin:12px 0}
 .cardHeadRow{display:flex; justify-content:space-between; align-items:center; gap:10px}
+.contactList .k{color:var(--muted); display:inline-block; width:92px}
+.contactList .v{font-weight:900}
 
 /* Bottom dock */
 .dock{
@@ -309,4 +366,23 @@ input:focus, textarea:focus, select:focus{
   border-radius:10px;
   font-size:12px;
   box-shadow: var(--shadow);
+}
+.dockHint{margin-left:auto}
+
+/* Small clean admin button in dock */
+.dockAdmin{
+  width:30px;height:30px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text);
+  text-decoration:none;
+  font-weight:900;
+}
+.dockAdmin:hover{
+  border-color: rgba(255,212,0,.35);
+  background: rgba(255,212,0,.08);
 }
