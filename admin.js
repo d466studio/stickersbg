@@ -1,3 +1,5 @@
+const ADMIN_PASSWORD = "350350";
+
 async function loadBaseColors() {
   const res = await fetch("colors.json", { cache: "no-store" });
   return await res.json();
@@ -20,7 +22,7 @@ function clearLocalOverride() {
 function rowTemplate(color, idx) {
   return `
     <div class="itemCard" data-idx="${idx}" style="display:flex;gap:10px;align-items:center">
-      <div class="swatch" style="background:${color.hex};width:28px;height:28px" title="${color.name}"></div>
+      <div class="swatch" style="background:${color.hex};width:28px;height:28px" title="${escapeHtml(color.name)}"></div>
 
       <div style="flex:1;display:grid;grid-template-columns: 1fr 1fr;gap:10px">
         <label style="margin:0">
@@ -94,7 +96,23 @@ function refreshExport(colors) {
   document.getElementById("exportBox").value = JSON.stringify(colors, null, 2);
 }
 
-(async function init(){
+// ---------------------
+// Password gate (client-side)
+// ---------------------
+function isAuthed() {
+  return sessionStorage.getItem("admin_authed") === "1";
+}
+
+function setAuthed() {
+  sessionStorage.setItem("admin_authed", "1");
+}
+
+function showPanel() {
+  document.getElementById("adminGate").style.display = "none";
+  document.getElementById("adminPanel").style.display = "block";
+}
+
+async function initPanel() {
   const hint = document.getElementById("adminHint");
   const editor = document.getElementById("colorEditor");
 
@@ -114,7 +132,7 @@ function refreshExport(colors) {
   document.getElementById("btnSaveLocal").addEventListener("click", () => {
     const updated = collectColors(editor);
     saveLocalOverride(updated);
-    hint.textContent = "✅ Запазено локално (localStorage). За да стане публично: Export → обнови colors.json в GitHub.";
+    hint.textContent = "✅ Запазено локално. За публично: Export → обнови colors.json в GitHub.";
     refreshExport(updated);
   });
 
@@ -140,4 +158,33 @@ function refreshExport(colors) {
       hint.textContent = "❌ Невалиден JSON.";
     }
   });
+}
+
+(function init(){
+  const gateHint = document.getElementById("gateHint");
+  const pass = document.getElementById("adminPass");
+  const btn = document.getElementById("btnLogin");
+
+  const attempt = async () => {
+    if ((pass.value || "").trim() === ADMIN_PASSWORD) {
+      setAuthed();
+      showPanel();
+      await initPanel();
+    } else {
+      gateHint.textContent = "❌ Грешна парола.";
+      pass.value = "";
+      pass.focus();
+    }
+  };
+
+  btn.addEventListener("click", attempt);
+  pass.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") attempt();
+  });
+
+  // already authed in this tab session
+  if (isAuthed()) {
+    showPanel();
+    initPanel();
+  }
 })();
