@@ -1,7 +1,5 @@
 :root{
   --bg:#0b0d10;
-  --panel:#11141a;
-  --panel2:#0f1217;
   --text:#e9eef6;
   --muted:#9aa6b2;
   --yellow:#ffd400;
@@ -32,14 +30,17 @@ body{
 }
 
 .brand{display:flex; align-items:center; gap:12px; min-width: 220px}
-.logoMark{
-  width:44px;height:40px;border-radius:12px;
-  background: linear-gradient(135deg, var(--yellow), #ff9f00);
-  color:#000; font-weight:900;
-  display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 10px 30px rgba(255,212,0,.12);
+
+.logoBox{
+  width:48px;height:48px;border-radius:14px;
+  background: rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;
 }
-.brandName{font-family:Oswald,Roboto,sans-serif; letter-spacing:.8px}
+.logoImg{width:100%;height:100%;object-fit:contain;padding:6px}
+
+.brandName{font-family:Oswald,Roboto,sans-serif; letter-spacing:.8px; font-weight:900}
 .brandTag{color:var(--muted); font-size:12px}
 
 .nav{display:flex; flex-wrap:wrap; gap:10px; align-items:center}
@@ -188,6 +189,7 @@ body{
   border:1px solid rgba(255,212,0,.22);
   background: rgba(255,212,0,.06);
 }
+.itemActions{margin-top:12px; display:flex; gap:10px; flex-wrap:wrap}
 
 /* Forms */
 .form{display:flex; flex-direction:column; gap:12px}
@@ -226,6 +228,7 @@ input:focus, textarea:focus, select:focus{
   color:#000;
 }
 .btnGhost{background: transparent}
+.btnRow{display:flex; gap:10px; flex-wrap:wrap}
 
 .inline{display:flex; align-items:center; gap:10px}
 .selectCompact{padding:8px 10px; border-radius:12px}
@@ -250,7 +253,7 @@ input:focus, textarea:focus, select:focus{
   white-space:nowrap;
 }
 
-/* Multi-color selector */
+/* Extra colors selector */
 .colorMulti{
   display:flex;
   flex-wrap:wrap;
@@ -261,9 +264,7 @@ input:focus, textarea:focus, select:focus{
   background: rgba(0,0,0,.18);
 }
 .colorChk{
-  display:flex;
-  align-items:center;
-  gap:8px;
+  display:flex; align-items:center; gap:8px;
   padding:6px 8px;
   border-radius:999px;
   border:1px solid rgba(255,255,255,.10);
@@ -287,12 +288,10 @@ input:focus, textarea:focus, select:focus{
   border:1px solid rgba(255,212,0,.22);
   background: rgba(255,212,0,.06);
 }
-.priceValue{
-  font-weight:900;
-  color: var(--yellow);
-}
+.priceValue{font-weight:900;color:var(--yellow)}
 
 /* Gallery */
+.galleryTop{display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap}
 .galleryGrid{
   display:grid;
   grid-template-columns: repeat(3, 1fr);
@@ -307,17 +306,20 @@ input:focus, textarea:focus, select:focus{
   background: rgba(0,0,0,.22);
   overflow:hidden;
 }
+.galleryImg{
+  height:170px;
+  width:100%;
+  object-fit:cover;
+  display:block;
+  background: rgba(255,255,255,.04);
+}
 .galleryPh{
-  height:160px;
+  height:170px;
   background: radial-gradient(300px 140px at 30% 30%, rgba(255,212,0,.10), transparent 70%),
               rgba(255,255,255,.04);
 }
-.galleryCap{
-  padding:10px 12px;
-  font-weight:900;
-  font-size:12px;
-  color: var(--muted);
-}
+.galleryCap{padding:10px 12px; font-weight:900; font-size:12px; color:var(--text)}
+.gallerySub{padding:0 12px 12px; font-size:12px; color:var(--muted)}
 
 /* Misc */
 .divider{height:1px; background: var(--line); margin:12px 0}
@@ -367,9 +369,6 @@ input:focus, textarea:focus, select:focus{
   font-size:12px;
   box-shadow: var(--shadow);
 }
-.dockHint{margin-left:auto}
-
-/* Small clean admin button in dock */
 .dockAdmin{
   width:30px;height:30px;
   border-radius:10px;
@@ -381,6 +380,7 @@ input:focus, textarea:focus, select:focus{
   color:var(--text);
   text-decoration:none;
   font-weight:900;
+  margin-left:auto;
 }
 .dockAdmin:hover{
   border-color: rgba(255,212,0,.35);
