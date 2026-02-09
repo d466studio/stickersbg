@@ -76,6 +76,68 @@ function setPreviewBoxContrast(previewTextEl, mainColorHex){
 }
 
 // Font upload (TTF/OTF/WOFF/WOFF2) using the FontFace API.
+
+// Persist uploaded fonts per-user (this browser) via IndexedDB.
+// - Fonts remain available after refresh / reopen.
+// - Fonts stay only on the current device/browser (not shared, not server-stored).
+const FONT_DB_NAME = "bg_stickers_fonts";
+const FONT_DB_VERSION = 1;
+const FONT_STORE = "fonts";
+
+function openFontDB(){
+  return new Promise((resolve, reject)=>{
+    const req = indexedDB.open(FONT_DB_NAME, FONT_DB_VERSION);
+    req.onupgradeneeded = ()=>{
+      const db = req.result;
+      if(!db.objectStoreNames.contains(FONT_STORE)){
+        db.createObjectStore(FONT_STORE, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = ()=> resolve(req.result);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+async function saveFontToDB({ id, family, fileName, mime, buffer }){
+  const db = await openFontDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(FONT_STORE, "readwrite");
+    tx.objectStore(FONT_STORE).put({ id, family, fileName, mime, buffer, savedAt: Date.now() });
+    tx.oncomplete = ()=> resolve(true);
+    tx.onerror = ()=> reject(tx.error);
+  });
+}
+
+async function loadAllFontsFromDB(){
+  const db = await openFontDB();
+  return new Promise((resolve, reject)=>{
+    const tx = db.transaction(FONT_STORE, "readonly");
+    const req = tx.objectStore(FONT_STORE).getAll();
+    req.onsuccess = ()=> resolve(req.result || []);
+    req.onerror = ()=> reject(req.error);
+  });
+}
+
+async function registerFontFaceFromBuffer(family, buffer, mime){
+  const blob = new Blob([buffer], { type: mime || "font/ttf" });
+  const url = URL.createObjectURL(blob);
+  const face = new FontFace(family, `url(${url})`);
+  await face.load();
+  document.fonts.add(face);
+  // Note: keep the blob URL alive for the session. (Revoking it would break the font.)
+  return true;
+}
+
+function _fontIdFromFile(file){
+  return `${file.name}__${file.size}__${file.lastModified}`;
+}
+
+function _hashStringDjb2(str){
+  let h = 5381;
+  for(let i=0;i<str.length;i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
+  // unsigned 32-bit
+  return (h >>> 0).toString(36);
+}
 function _sanitizeFontFamily(name){
   return String(name || "Custom Font")
     .replace(/\.[^/.]+$/, "")
@@ -84,9 +146,13 @@ function _sanitizeFontFamily(name){
     .trim() || "Custom Font";
 }
 
-function _uniqueFontFamily(base){
-  const rand = Math.random().toString(36).slice(2, 7);
-  return `${base} ${rand}`;
+function _stableUserFontFamily(file){
+  // Create a stable family name so a saved font reloads with the same name.
+  // Prefix avoids collisions with system fonts.
+  const base = _sanitizeFontFamily(file?.name);
+  const id = _fontIdFromFile(file);
+  const h = _hashStringDjb2(id);
+  return `User: ${base} (${h})`;
 }
 
 function _ensureUploadedOptgroup(selectEl){
@@ -113,13 +179,29 @@ function _addFontOption(selectEl, family){
 
 async function loadAndRegisterUserFont(file){
   if(!file) return null;
-  const base = _sanitizeFontFamily(file.name);
-  const family = _uniqueFontFamily(base);
+  const family = _stableUserFontFamily(file);
   const buf = await file.arrayBuffer();
-  const ff = new FontFace(family, buf);
-  await ff.load();
-  document.fonts.add(ff);
-  return family;
+  // Use buffer-based registration (more consistent across mime types)
+  await registerFontFaceFromBuffer(family, buf, file.type);
+  return { family, buffer: buf };
+}
+
+async function bootstrapSavedFonts(){
+  if(!('indexedDB' in window) || !('FontFace' in window) || !document.fonts) return;
+  try{
+    const saved = await loadAllFontsFromDB();
+    if(!Array.isArray(saved) || !saved.length) return;
+    for(const f of saved){
+      try{
+        await registerFontFaceFromBuffer(f.family, f.buffer, f.mime);
+        ['npFont','stFont'].forEach(id => _addFontOption($(id), f.family));
+      }catch(err){
+        console.warn('Failed to load saved font', f?.family, err);
+      }
+    }
+  }catch(err){
+    console.warn('Font DB bootstrap failed', err);
+  }
 }
 
 function initFontUploads(){
@@ -153,11 +235,19 @@ function initFontUploads(){
 
       try{
         if(hint) hint.textContent = "Зареждам шрифта…";
-        const family = await loadAndRegisterUserFont(file);
-        if(!family) throw new Error('no family');
+        const loaded = await loadAndRegisterUserFont(file);
+        if(!loaded?.family) throw new Error('no family');
+        const family = loaded.family;
         // Add to both designers so it appears everywhere.
         ['npFont','stFont'].forEach(id => _addFontOption($(id), family));
         sel.value = family;
+
+        // Persist for this browser
+        if('indexedDB' in window){
+          const id = _fontIdFromFile(file);
+          await saveFontToDB({ id, family, fileName: file.name, mime: file.type, buffer: loaded.buffer });
+        }
+
         if(hint) hint.textContent = `✅ Добавен шрифт: ${family}`;
         onUpdate && onUpdate();
       }catch(err){
@@ -503,6 +593,8 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   initBrandDropdown();
   initGallery();
   initFontUploads();
+  // Load any previously uploaded fonts for this browser/device.
+  await bootstrapSavedFonts();
 
   ["npText","npWidth","npFont","npMainColor"].forEach(id=>{
     $(id)?.addEventListener("input", updateNadpisi);
