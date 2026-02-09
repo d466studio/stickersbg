@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&family=Inter:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&family=Rubik:wght@400;600;700&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Merriweather:wght@400;700&family=Pacifico&family=Lobster&family=Comfortaa:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -102,14 +102,14 @@
     <section class="page" id="page-galeria" data-page="galeria">
       <div class="pageHead">
         <h1>ГАЛЕРИЯ</h1>
-        <p class="muted">Готови проекти. Добавяш нови само в <b>gallery.json</b>.</p>
+        <p class="muted">Проекти от <b>gallery.json</b>. Добавяш нови без да пипаш HTML.</p>
       </div>
 
       <div class="card">
         <div class="galleryTop">
           <div>
             <h2>Проекти</h2>
-            <p class="muted small">Филтър (по желание): тагове от gallery.json</p>
+            <p class="muted small">Филтър по таг</p>
           </div>
 
           <div class="inline">
@@ -167,13 +167,48 @@
                 <label>
                   Шрифт
                   <select name="font" id="npFont" required>
-                    <option value="Oswald">Oswald</option>
-                    <option value="Montserrat">Montserrat</option>
-                    <option value="Russo One">Russo One</option>
-                    <option value="PT Sans">PT Sans</option>
-                    <option value="Exo 2">Exo 2</option>
-                    <option value="Roboto" selected>Roboto</option>
-                  </select>
+<optgroup label="Популярни">
+  <option value="Roboto" selected>Roboto</option>
+  <option value="Inter">Inter</option>
+  <option value="Poppins">Poppins</option>
+  <option value="Montserrat">Montserrat</option>
+  <option value="Raleway">Raleway</option>
+  <option value="Nunito">Nunito</option>
+  <option value="Rubik">Rubik</option>
+  <option value="Oswald">Oswald</option>
+  <option value="PT Sans">PT Sans</option>
+  <option value="Exo 2">Exo 2</option>
+</optgroup>
+<optgroup label="Класически (системни)">
+  <option value="Arial">Arial</option>
+  <option value="Helvetica">Helvetica</option>
+  <option value="Verdana">Verdana</option>
+  <option value="Tahoma">Tahoma</option>
+  <option value="Trebuchet MS">Trebuchet MS</option>
+  <option value="Georgia">Georgia</option>
+  <option value="Times New Roman">Times New Roman</option>
+  <option value="Courier New">Courier New</option>
+  <option value="Impact">Impact</option>
+  <option value="Comic Sans MS">Comic Sans MS</option>
+</optgroup>
+<optgroup label="По-яки (Google)">
+  <option value="Bebas Neue">Bebas Neue</option>
+  <option value="Anton">Anton</option>
+  <option value="Barlow Condensed">Barlow Condensed</option>
+  <option value="Playfair Display">Playfair Display</option>
+  <option value="Merriweather">Merriweather</option>
+  <option value="Comfortaa">Comfortaa</option>
+  <option value="Cinzel">Cinzel</option>
+  <option value="Orbitron">Orbitron</option>
+  <option value="Pacifico">Pacifico</option>
+  <option value="Lobster">Lobster</option>
+  <option value="Russo One">Russo One</option>
+</optgroup>
+</select>
+                    <div class="fontUpload">
+                      <input type="file" id="npFontUpload" accept=".ttf,.otf,.woff,.woff2" />
+                      <div class="muted small" id="npFontUploadHint">Може да качиш свой шрифт (TTF/OTF/WOFF). Ще се появи веднага в списъка.</div>
+                    </div>
                 </label>
 
                 <label>
@@ -184,13 +219,12 @@
 
               <label>
                 Доп. цветове (по желание)
-                <details class="dd" id="stExtraColorsDD">
-                  <summary id="stExtraColorsSummary">Избери доп. цветове</summary>
-                  <div class="ddMenu" id="stExtraColors"></div>
-                </details>
-                <input type="hidden" name="extraColors" id="stExtraColorsHidden" />
+                <div class="colorMulti" id="npExtraColors"></div>
+                <input type="hidden" name="extraColors" id="npExtraColorsHidden" />
+                <p class="muted small">
+                  Ако са 2+ цвята, напиши кои букви/части да са в различен цвят.
+                </p>
               </label>
-
 
               <div class="priceLine">
                 <div class="muted small">Ориентировъчна цена:</div>
@@ -209,7 +243,6 @@
 
               <div class="btnRow">
                 <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
-                <button class="btn" type="button" id="npCopy">Копирай резюме</button>
               </div>
               <p class="muted small" id="npSubmitHint"></p>
             </form>
@@ -217,13 +250,13 @@
 
           <div class="card">
             <h2>Live preview</h2>
-            <p class="muted small">Preview показва само <b>основния цвят</b> (дори да има доп. цветове).</p>
+            <p class="muted small">Preview показва само <b>основния цвят</b>.</p>
 
             <div class="previewWrap">
               <div class="previewRuler">
                 <span id="npRulerText">~40 см</span>
               </div>
-              <div class="previewBox" id="npPreviewBox">
+              <div class="previewBox">
                 <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
               </div>
             </div>
@@ -269,13 +302,48 @@
               <label>
                 Шрифт
                 <select name="font" id="stFont" required>
-                  <option value="Oswald">Oswald</option>
-                  <option value="Montserrat">Montserrat</option>
-                  <option value="Russo One">Russo One</option>
-                  <option value="PT Sans">PT Sans</option>
-                  <option value="Exo 2">Exo 2</option>
-                  <option value="Roboto" selected>Roboto</option>
-                </select>
+<optgroup label="Популярни">
+  <option value="Roboto" selected>Roboto</option>
+  <option value="Inter">Inter</option>
+  <option value="Poppins">Poppins</option>
+  <option value="Montserrat">Montserrat</option>
+  <option value="Raleway">Raleway</option>
+  <option value="Nunito">Nunito</option>
+  <option value="Rubik">Rubik</option>
+  <option value="Oswald">Oswald</option>
+  <option value="PT Sans">PT Sans</option>
+  <option value="Exo 2">Exo 2</option>
+</optgroup>
+<optgroup label="Класически (системни)">
+  <option value="Arial">Arial</option>
+  <option value="Helvetica">Helvetica</option>
+  <option value="Verdana">Verdana</option>
+  <option value="Tahoma">Tahoma</option>
+  <option value="Trebuchet MS">Trebuchet MS</option>
+  <option value="Georgia">Georgia</option>
+  <option value="Times New Roman">Times New Roman</option>
+  <option value="Courier New">Courier New</option>
+  <option value="Impact">Impact</option>
+  <option value="Comic Sans MS">Comic Sans MS</option>
+</optgroup>
+<optgroup label="По-яки (Google)">
+  <option value="Bebas Neue">Bebas Neue</option>
+  <option value="Anton">Anton</option>
+  <option value="Barlow Condensed">Barlow Condensed</option>
+  <option value="Playfair Display">Playfair Display</option>
+  <option value="Merriweather">Merriweather</option>
+  <option value="Comfortaa">Comfortaa</option>
+  <option value="Cinzel">Cinzel</option>
+  <option value="Orbitron">Orbitron</option>
+  <option value="Pacifico">Pacifico</option>
+  <option value="Lobster">Lobster</option>
+  <option value="Russo One">Russo One</option>
+</optgroup>
+</select>
+                    <div class="fontUpload">
+                      <input type="file" id="stFontUpload" accept=".ttf,.otf,.woff,.woff2" />
+                      <div class="muted small" id="stFontUploadHint">Може да качиш свой шрифт (TTF/OTF/WOFF). Ще се появи веднага в списъка.</div>
+                    </div>
               </label>
 
               <label>
@@ -286,8 +354,12 @@
 
             <label>
               Доп. цветове (по желание)
-              <div class="colorMulti" id="stExtraColors"></div>
+              <details class="dd" id="stExtraColorsDD">
+                <summary id="stExtraColorsSummary">Избери доп. цветове</summary>
+                <div class="ddMenu" id="stExtraColors"></div>
+              </details>
               <input type="hidden" name="extraColors" id="stExtraColorsHidden" />
+              <p class="muted small">Ако са 2+ цвята, опиши кои части да са в различен цвят.</p>
             </label>
 
             <div class="priceLine">
@@ -307,7 +379,6 @@
 
             <div class="btnRow">
               <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
-              <button class="btn" type="button" id="stCopy">Копирай резюме</button>
             </div>
             <p class="muted small" id="stSubmitHint"></p>
           </form>
@@ -321,7 +392,6 @@
             <div class="previewRuler">
               <span id="stRulerText">~40 см</span>
             </div>
-
             <div class="previewBox">
               <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
                 <img id="stThumb" alt="preview" style="display:none;max-width:220px;max-height:120px;border-radius:12px;border:1px solid rgba(255,255,255,.12)" />
@@ -329,7 +399,7 @@
               </div>
             </div>
 
-            <p class="muted small">Цената е +2€ към базата (дизайн, не само текст).</p>
+            <p class="muted small">Цената е +2€ към базата (дизайн).</p>
           </div>
         </div>
       </div>
@@ -385,7 +455,6 @@
 
             <div class="btnRow">
               <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
-              <button class="btn" type="button" id="avCopy">Копирай резюме</button>
             </div>
             <p class="muted small" id="avtoSubmitHint"></p>
           </form>
@@ -397,9 +466,7 @@
     <section class="page" id="page-print" data-page="print">
       <div class="pageHead">
         <h1>ПРИНТ СТИКЕР</h1>
-        <p class="muted">
-          Пълноцветен принт стикер (външен печат) — вторичен вариант. <b>Макс размер: A4</b>.
-        </p>
+        <p class="muted">Пълноцветен принт стикер (външен печат). <b>Макс размер: A4</b>.</p>
       </div>
 
       <div class="grid2">
@@ -428,7 +495,7 @@
 
             <label>
               Описание
-              <textarea name="description" rows="4" placeholder="Брой, изрязване по контур/правоъгълник, употреба..." required></textarea>
+              <textarea name="description" rows="4" placeholder="Брой, изрязване по контур/правоъгълник..." required></textarea>
             </label>
 
             <label>
@@ -438,7 +505,6 @@
 
             <div class="btnRow">
               <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
-              <button class="btn" type="button" id="prCopy">Копирай резюме</button>
             </div>
             <p class="muted small" id="printSubmitHint"></p>
           </form>
@@ -483,7 +549,7 @@
 
   </main>
 
-  <!-- Bottom color dock -->
+  <!-- Bottom dock -->
   <footer class="dock" id="colorDock">
     <div class="dockInner">
       <div class="dockTitle">Налични цветове:</div>
@@ -495,4 +561,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
