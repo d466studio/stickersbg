@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900">
+  <defs>
+    <style>
+      .t1{font: 900 64px Oswald, Arial, sans-serif; letter-spacing: 2px;}
+      .t2{font: 900 42px Oswald, Arial, sans-serif; letter-spacing: 3px;}
+      .t3{font: 700 28px Roboto, Arial, sans-serif; letter-spacing: 4px;}
+    </style>
+  </defs>
+
+  <!-- Subtle, repeating typographic pattern (transparent background) -->
+  <g opacity="0.08" fill="#ffd400">
+    <text class="t1" x="40"  y="110" transform="rotate(-10 40 110)">BG</text>
+    <text class="t2" x="520" y="140" transform="rotate(12 520 140)">STICKERS</text>
+    <text class="t2" x="120" y="350" transform="rotate(-18 120 350)">VINYL</text>
+    <text class="t3" x="560" y="330" transform="rotate(-8 560 330)">CUSTOM</text>
+    <text class="t3" x="70"  y="590" transform="rotate(14 70 590)">LOW &amp; SLOW</text>
+    <text class="t2" x="470" y="610" transform="rotate(-16 470 610)">BULGARIA</text>
+    <text class="t1" x="140" y="820" transform="rotate(8 140 820)">DRIVEN</text>
+    <text class="t3" x="610" y="820" transform="rotate(-10 610 820)">THEBGSTICKERS</text>
+  </g>
+
+  <g opacity="0.06" fill="#ffffff">
+    <text class="t3" x="70"  y="220" transform="rotate(6 70 220)">CAR CLUB</text>
+    <text class="t3" x="610" y="470" transform="rotate(18 610 470)">TRACK DAY</text>
+    <text class="t3" x="230" y="470" transform="rotate(-8 230 470)">STANCE</text>
+    <text class="t3" x="330" y="740" transform="rotate(10 330 740)">TURBO</text>
+  </g>
+</svg>
