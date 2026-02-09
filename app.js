@@ -1,7 +1,7 @@
 const CONFIG = {
   brandName: "BG STICKERS",
   instagram: "@thebgstickers",
-  formEndpoint: "",
+  formEndpoint: "", // optional: Formspree/Getform endpoint
   contactEmail: "you@example.com"
 };
 
@@ -11,9 +11,7 @@ const FALLBACK_COLORS = [
   { name: "Жълто", hex: "#ffd400" },
   { name: "Червено", hex: "#ff3b30" },
   { name: "Синьо", hex: "#2f80ed" },
-  { name: "Зелено", hex: "#27ae60" },
-  { name: "Сребро", hex: "#c0c6cf" },
-  { name: "Злато", hex: "#d4af37" }
+  { name: "Зелено", hex: "#27ae60" }
 ];
 
 const POPULAR_TEXTS = [
@@ -59,6 +57,119 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 }
 
+function isBlackHex(hex){
+  const h = String(hex || "").trim().toLowerCase();
+  return h === "#000" || h === "#000000" || h === "#0b0d10";
+}
+
+function setPreviewBoxContrast(previewTextEl, mainColorHex){
+  // When user selects black text, switch preview background to white for readability.
+  const box = previewTextEl?.closest(".previewBox");
+  if(!box) return;
+  if(isBlackHex(mainColorHex)){
+    box.style.background = "#ffffff";
+    box.style.borderColor = "rgba(0,0,0,.22)";
+  }else{
+    box.style.background = "";
+    box.style.borderColor = "";
+  }
+}
+
+// Font upload (TTF/OTF/WOFF/WOFF2) using the FontFace API.
+function _sanitizeFontFamily(name){
+  return String(name || "Custom Font")
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[_-]+/g, " ")
+    .replace(/[^a-zA-Z0-9À-ɏЀ-ӿ\s]/g, "")
+    .trim() || "Custom Font";
+}
+
+function _uniqueFontFamily(base){
+  const rand = Math.random().toString(36).slice(2, 7);
+  return `${base} ${rand}`;
+}
+
+function _ensureUploadedOptgroup(selectEl){
+  if(!selectEl) return null;
+  let g = selectEl.querySelector('optgroup[data-uploaded="1"]');
+  if(g) return g;
+  g = document.createElement('optgroup');
+  g.label = "Качени";
+  g.setAttribute('data-uploaded', '1');
+  selectEl.insertBefore(g, selectEl.firstChild);
+  return g;
+}
+
+function _addFontOption(selectEl, family){
+  const g = _ensureUploadedOptgroup(selectEl);
+  // Prevent duplicates
+  const exists = Array.from(selectEl.options).some(o => (o.value || "") === family);
+  if(exists) return;
+  const opt = document.createElement('option');
+  opt.value = family;
+  opt.textContent = family;
+  g.appendChild(opt);
+}
+
+async function loadAndRegisterUserFont(file){
+  if(!file) return null;
+  const base = _sanitizeFontFamily(file.name);
+  const family = _uniqueFontFamily(base);
+  const buf = await file.arrayBuffer();
+  const ff = new FontFace(family, buf);
+  await ff.load();
+  document.fonts.add(ff);
+  return family;
+}
+
+function initFontUploads(){
+  const inputs = [
+    { inputId:'npFontUpload', selectId:'npFont', hintId:'npFontUploadHint', onUpdate:updateNadpisi },
+    { inputId:'stFontUpload', selectId:'stFont', hintId:'stFontUploadHint', onUpdate:updateStikeri },
+  ];
+
+  inputs.forEach(({inputId, selectId, hintId, onUpdate})=>{
+    const inp = $(inputId);
+    const sel = $(selectId);
+    const hint = $(hintId);
+    if(!inp || !sel) return;
+
+    inp.addEventListener('change', async ()=>{
+      const file = inp.files && inp.files[0];
+      if(!file) return;
+
+      if(!('FontFace' in window) || !document.fonts){
+        if(hint) hint.textContent = "Този браузър не поддържа зареждане на шрифтове директно.";
+        return;
+      }
+
+      const okTypes = ['font/ttf','font/otf','font/woff','font/woff2','application/font-woff','application/font-woff2','application/octet-stream'];
+      const extOk = /\.(ttf|otf|woff|woff2)$/i.test(file.name);
+      if(!extOk && !okTypes.includes(file.type)){
+        if(hint) hint.textContent = "Моля качи TTF/OTF/WOFF/WOFF2 файл.";
+        inp.value = "";
+        return;
+      }
+
+      try{
+        if(hint) hint.textContent = "Зареждам шрифта…";
+        const family = await loadAndRegisterUserFont(file);
+        if(!family) throw new Error('no family');
+        // Add to both designers so it appears everywhere.
+        ['npFont','stFont'].forEach(id => _addFontOption($(id), family));
+        sel.value = family;
+        if(hint) hint.textContent = `✅ Добавен шрифт: ${family}`;
+        onUpdate && onUpdate();
+      }catch(err){
+        console.error(err);
+        if(hint) hint.textContent = "❌ Не успях да заредя този шрифт. Опитай друг файл (woff2/ttf).";
+      }finally{
+        inp.value = ""; // allow re-upload same file
+      }
+    });
+  });
+}
+
 function currentRoute(){ return (location.hash || "#nachalo").replace("#","") || "nachalo"; }
 
 function setActivePage(route){
@@ -70,7 +181,7 @@ function setActivePage(route){
 async function safeFetchJson(path){
   try{
     const res = await fetch(path, { cache:"no-store" });
-    if(!res.ok) throw new Error();
+    if(!res.ok) throw new Error(`${path} ${res.status}`);
     return await res.json();
   }catch{
     return null;
@@ -79,9 +190,7 @@ async function safeFetchJson(path){
 
 async function loadColors(){
   const ls = localStorage.getItem("vinyl_colors_override");
-  if(ls){
-    try { return JSON.parse(ls); } catch {}
-  }
+  if(ls){ try { return JSON.parse(ls); } catch {} }
   const json = await safeFetchJson("colors.json");
   return Array.isArray(json) && json.length ? json : FALLBACK_COLORS;
 }
@@ -108,24 +217,24 @@ function fillColorSelect(selectEl, colors){
     opt.textContent = c.name;
     selectEl.appendChild(opt);
   });
-  const y = colors.find(c => c.name.toLowerCase().includes("жъл"));
+  const y = colors.find(c=>c.name.toLowerCase().includes("жъл"));
   if(y) selectEl.value = y.hex;
 }
 
 function renderExtraColors(containerEl, hiddenEl, colors, summaryEl){
   if(!containerEl || !hiddenEl) return;
-
   containerEl.innerHTML = "";
+
   colors.forEach(c=>{
     const id = `x_${Math.random().toString(16).slice(2)}`;
     const label = document.createElement("label");
     label.className = "colorChk";
     label.setAttribute("for", id);
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.id = id;
-    checkbox.value = c.hex;
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.id = id;
+    cb.value = c.hex;
 
     const dot = document.createElement("span");
     dot.className = "colorDot";
@@ -134,22 +243,18 @@ function renderExtraColors(containerEl, hiddenEl, colors, summaryEl){
     const txt = document.createElement("span");
     txt.textContent = c.name;
 
-    label.appendChild(checkbox);
-    label.appendChild(dot);
-    label.appendChild(txt);
+    label.appendChild(cb); label.appendChild(dot); label.appendChild(txt);
     containerEl.appendChild(label);
   });
 
   const sync = () => {
     const chosen = [...containerEl.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
     hiddenEl.value = chosen.join(",");
-
     if(summaryEl){
       summaryEl.textContent = chosen.length ? `Доп. цветове: ${chosen.length} избрани` : "Избери доп. цветове";
     }
     return chosen;
   };
-
   containerEl.addEventListener("change", sync);
   sync();
 }
@@ -160,7 +265,7 @@ function getExtraColors(hiddenEl){
   return v.split(",").map(s=>s.trim()).filter(Boolean);
 }
 
-// Pricing
+// Pricing rules
 function basePriceByWidth(widthCm){
   const w = Number(widthCm || 0);
   if (w <= 10) return 10;
@@ -176,7 +281,7 @@ function estimatePrice({ widthCm, extraColorsCount, extraBase = 0 }){
   return { base, extra, total: base + extra };
 }
 
-// Надписи
+// Live previews
 function updateNadpisi(){
   const text = $("npText")?.value || "YOUR TEXT";
   const width = Number($("npWidth")?.value || 40);
@@ -187,17 +292,17 @@ function updateNadpisi(){
   const p = $("npPreviewText");
   if(p){
     p.textContent = text;
-    p.style.fontFamily = `${font}, Roboto, sans-serif`;
-    p.style.color = mainColor; // preview ONLY main color
+    p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
+    p.style.color = mainColor;
     p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
+    setPreviewBoxContrast(p, mainColor);
   }
-  $("npRulerText") && ($("npRulerText").textContent = `~${width} см`);
+  if($("npRulerText")) $("npRulerText").textContent = `~${width} см`;
 
   const est = estimatePrice({ widthCm: width, extraColorsCount: extras.length, extraBase: 0 });
-  $("npPrice") && ($("npPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`);
+  if($("npPrice")) $("npPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`;
 }
 
-// Стикери
 function updateStikeri(){
   const text = $("stText")?.value || "BG STICKERS";
   const width = Number($("stWidth")?.value || 40);
@@ -208,17 +313,18 @@ function updateStikeri(){
   const p = $("stPreviewText");
   if(p){
     p.textContent = text;
-    p.style.fontFamily = `${font}, Roboto, sans-serif`;
-    p.style.color = mainColor; // preview ONLY main color
+    p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
+    p.style.color = mainColor;
     p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
+    setPreviewBoxContrast(p, mainColor);
   }
-  $("stRulerText") && ($("stRulerText").textContent = `~${width} см`);
+  if($("stRulerText")) $("stRulerText").textContent = `~${width} см`;
 
   const est = estimatePrice({ widthCm: width, extraColorsCount: extras.length, extraBase: 2 });
-  $("stPrice") && ($("stPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`);
+  if($("stPrice")) $("stPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`;
 }
 
-// Tabs init for НАДПИСИ
+// Tabs
 function initTabs(){
   document.querySelectorAll(".tabBtn").forEach(btn=>{
     btn.addEventListener("click", ()=>{
@@ -227,50 +333,47 @@ function initTabs(){
       page.querySelectorAll(".tabBtn").forEach(b=>b.classList.remove("active"));
       page.querySelectorAll(".tabPanel").forEach(p=>p.classList.remove("active"));
       btn.classList.add("active");
-
       const targetId = btn.dataset.tab === "nadpisi-pop" ? "tab-nadpisi-pop" : "tab-nadpisi-custom";
       document.getElementById(targetId)?.classList.add("active");
     });
   });
 }
 
-// Render popular cards (НАДПИСИ)
-function renderNadpisiPopular(){
-  const grid = $("nadpisiPopularGrid");
-  if(!grid) return;
-  grid.innerHTML = "";
-
-  POPULAR_TEXTS.forEach(it=>{
+// Popular cards
+function renderPopular(gridEl, items, onRequest){
+  if(!gridEl) return;
+  gridEl.innerHTML = "";
+  items.forEach(it=>{
     const card = document.createElement("div");
     card.className = "itemCard";
     card.innerHTML = `
       <div class="itemTitle">${escapeHtml(it.title)}</div>
       <div class="itemMeta">${escapeHtml(it.meta || "")}</div>
       <div class="itemPillRow">${(it.pills||[]).map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("")}</div>
-      <div class="itemActions">
-        <button class="btn btnPrimary">Заяви</button>
-      </div>
+      ${onRequest ? `<div class="itemActions"><button class="btn btnPrimary">Заяви</button></div>` : ``}
     `;
-    card.querySelector("button")?.addEventListener("click", ()=>{
-      // Switch to custom tab and prefill
-      location.hash = "#nadpisi";
-      setTimeout(()=>{
-        document.querySelector('[data-tab="nadpisi-custom"]')?.click();
-        if(it.preset?.text) $("npText").value = it.preset.text;
-        if(it.preset?.width) $("npWidth").value = it.preset.width;
-        updateNadpisi();
-      }, 60);
-    });
-    grid.appendChild(card);
+    if(onRequest){
+      card.querySelector("button")?.addEventListener("click", ()=>onRequest(it));
+    }
+    gridEl.appendChild(card);
   });
 }
 
-// Auto brand dropdown stays as before
+function renderNadpisiPopular(){
+  renderPopular($("nadpisiPopularGrid"), POPULAR_TEXTS, (it)=>{
+    location.hash = "#nadpisi";
+    setTimeout(()=>{
+      document.querySelector('[data-tab="nadpisi-custom"]')?.click();
+      if(it.preset?.text) $("npText").value = it.preset.text;
+      if(it.preset?.width) $("npWidth").value = it.preset.width;
+      updateNadpisi();
+    }, 60);
+  });
+}
+
 function initBrandDropdown(){
   const sel = $("brandSelect");
-  const grid = $("avtoPopularGrid");
-  if(!sel || !grid) return;
-
+  if(!sel) return;
   sel.innerHTML = "";
   Object.keys(AUTO_BY_BRAND).forEach(b=>{
     const opt = document.createElement("option");
@@ -278,44 +381,129 @@ function initBrandDropdown(){
     sel.appendChild(opt);
   });
   sel.value = "BMW";
+  const render = ()=> renderPopular($("avtoPopularGrid"), AUTO_BY_BRAND[sel.value] || AUTO_BY_BRAND["ДРУГО"], null);
+  sel.addEventListener("change", render);
+  render();
+}
 
-  const render = () => {
+// Gallery
+async function initGallery(){
+  const grid = $("galleryGrid");
+  const tagSel = $("galleryTag");
+  if(!grid || !tagSel) return;
+
+  const data = await safeFetchJson("gallery.json");
+  const items = Array.isArray(data) ? data : [];
+  const tags = new Set();
+  items.forEach(x => (x.tags||[]).forEach(t => tags.add(String(t).toLowerCase())));
+  tagSel.innerHTML = `<option value="all">Всички</option>`;
+  [...tags].sort().forEach(t=>{
+    const opt = document.createElement("option");
+    opt.value = t; opt.textContent = t;
+    tagSel.appendChild(opt);
+  });
+
+  const render = ()=>{
+    const sel = tagSel.value;
+    const filtered = sel==="all" ? items : items.filter(x => (x.tags||[]).map(t=>String(t).toLowerCase()).includes(sel));
     grid.innerHTML = "";
-    (AUTO_BY_BRAND[sel.value] || AUTO_BY_BRAND["ДРУГО"]).forEach(it=>{
+    if(!filtered.length){
+      grid.innerHTML = `<div class="muted small">Няма проекти (добави в gallery.json).</div>`;
+      return;
+    }
+    filtered.forEach(item=>{
       const card = document.createElement("div");
-      card.className = "itemCard";
+      card.className = "galleryItem";
+      const hasImg = item.image && String(item.image).trim();
       card.innerHTML = `
-        <div class="itemTitle">${escapeHtml(it.title)}</div>
-        <div class="itemMeta">${escapeHtml(it.meta || "")}</div>
-        <div class="itemPillRow">${(it.pills||[]).map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("")}</div>
+        ${hasImg ? `<img class="galleryImg" src="${escapeHtml(item.image)}" alt="">` : `<div class="galleryPh"></div>`}
+        <div class="galleryCap">${escapeHtml(item.title||"")}</div>
+        <div class="gallerySub">${escapeHtml(item.caption||"")}</div>
       `;
       grid.appendChild(card);
     });
   };
 
-  sel.addEventListener("change", render);
+  tagSel.addEventListener("change", render);
   render();
+}
+
+// Copy helpers
+async function copyText(text){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch{ return false; }
+}
+function buildNadpisiSummary(){
+  const text = $("npText")?.value || "";
+  const w = $("npWidth")?.value || "";
+  const h = $("npHeight")?.value || "";
+  const font = $("npFont")?.value || "";
+  const main = $("npMainColor")?.value || "";
+  const extras = getExtraColors($("npExtraColorsHidden"));
+  const note = document.querySelector('#formNadpisi textarea[name="note"]')?.value || "";
+  const price = $("npPrice")?.textContent || "";
+  return `BG STICKERS • НАДПИСИ ПО ПОРЪЧКА
+Текст: ${text}
+Размер: ${w}см ${h ? `/ ${h}см` : ""}
+Шрифт: ${font}
+Основен цвят: ${main}
+Доп. цветове: ${extras.join(", ") || "няма"}
+Бележка: ${note || "-"}
+Цена (ориент.): ${price}`;
+}
+function buildStikeriSummary(){
+  const text = $("stText")?.value || "";
+  const w = $("stWidth")?.value || "";
+  const h = $("stHeight")?.value || "";
+  const font = $("stFont")?.value || "";
+  const main = $("stMainColor")?.value || "";
+  const extras = getExtraColors($("stExtraColorsHidden"));
+  const desc = document.querySelector('#formStikeri textarea[name="description"]')?.value || "";
+  const price = $("stPrice")?.textContent || "";
+  return `BG STICKERS • СТИКЕРИ ПО ПОРЪЧКА
+Текст: ${text}
+Размер: ${w}см ${h ? `/ ${h}см` : ""}
+Шрифт: ${font}
+Основен цвят: ${main}
+Доп. цветове: ${extras.join(", ") || "няма"}
+Описание: ${desc || "-"}
+Цена (ориент.): ${price}`;
+}
+
+// Optional submit
+async function postForm(formEl, hintEl, extra){
+  if(!CONFIG.formEndpoint){
+    hintEl.textContent = `⚠️ Няма formEndpoint. Добави endpoint в app.js. Междувременно: ${CONFIG.instagram} / ${CONFIG.contactEmail}.`;
+    return;
+  }
+  hintEl.textContent = "Изпращане...";
+  const fd = new FormData(formEl);
+  Object.entries(extra || {}).forEach(([k,v]) => fd.append(k, v));
+  try{
+    const res = await fetch(CONFIG.formEndpoint, { method:"POST", body:fd, headers:{ "Accept":"application/json" }});
+    hintEl.textContent = res.ok ? "✅ Заявката е изпратена!" : "❌ Грешка при изпращане.";
+    if(res.ok) formEl.reset();
+  }catch{
+    hintEl.textContent = "❌ Няма връзка / endpoint проблем.";
+  }
 }
 
 window.addEventListener("DOMContentLoaded", async ()=>{
   const colors = await loadColors();
-
   renderColorDock(colors);
   fillColorSelect($("npMainColor"), colors);
   fillColorSelect($("stMainColor"), colors);
   fillColorSelect($("avtoColor"), colors);
 
-  // Надписи extra colors (normal block)
   renderExtraColors($("npExtraColors"), $("npExtraColorsHidden"), colors, null);
-
-  // Стикери extra colors (dropdown block)
   renderExtraColors($("stExtraColors"), $("stExtraColorsHidden"), colors, $("stExtraColorsSummary"));
 
   initTabs();
   renderNadpisiPopular();
   initBrandDropdown();
+  initGallery();
+  initFontUploads();
 
-  // Bind inputs
   ["npText","npWidth","npFont","npMainColor"].forEach(id=>{
     $(id)?.addEventListener("input", updateNadpisi);
     $(id)?.addEventListener("change", updateNadpisi);
@@ -328,9 +516,7 @@ window.addEventListener("DOMContentLoaded", async ()=>{
   });
   $("stExtraColors")?.addEventListener("change", updateStikeri);
 
-  // Thumbnail for stikeri
-  const f = $("stFile");
-  const img = $("stThumb");
+  const f = $("stFile"), img = $("stThumb");
   if(f && img){
     f.addEventListener("change", ()=>{
       const file = f.files && f.files[0];
@@ -340,12 +526,32 @@ window.addEventListener("DOMContentLoaded", async ()=>{
     });
   }
 
-  // Router
+  $("npCopy")?.addEventListener("click", async ()=>{
+    const ok = await copyText(buildNadpisiSummary());
+    $("npSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
+  });
+  $("stCopy")?.addEventListener("click", async ()=>{
+    const ok = await copyText(buildStikeriSummary());
+    $("stSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
+  });
+  $("avCopy")?.addEventListener("click", async ()=>{
+    const ok = await copyText("BG STICKERS • АВТО ПО ПОРЪЧКА (виж полетата)");
+    $("avtoSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
+  });
+  $("prCopy")?.addEventListener("click", async ()=>{
+    const ok = await copyText("BG STICKERS • ПРИНТ СТИКЕР (виж полетата)");
+    $("printSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
+  });
+
+  $("formNadpisi")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formNadpisi"), $("npSubmitHint"), { type:"nadpisi_custom" }); });
+  $("formStikeri")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formStikeri"), $("stSubmitHint"), { type:"stikeri_custom" }); });
+  $("formAvtoCustom")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formAvtoCustom"), $("avtoSubmitHint"), { type:"avto_custom" }); });
+  $("formPrint")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formPrint"), $("printSubmitHint"), { type:"print_sticker" }); });
+
   const onRoute = () => setActivePage(currentRoute());
   window.addEventListener("hashchange", onRoute);
   onRoute();
 
-  // initial
   updateNadpisi();
   updateStikeri();
 });
