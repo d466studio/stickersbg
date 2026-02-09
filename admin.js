@@ -14,15 +14,16 @@ function loadLocalOverride() {
 function saveLocalOverride(colors) {
   localStorage.setItem("vinyl_colors_override", JSON.stringify(colors, null, 2));
 }
+function clearLocalOverride() { localStorage.removeItem("vinyl_colors_override"); }
 
-function clearLocalOverride() {
-  localStorage.removeItem("vinyl_colors_override");
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 }
 
 function rowTemplate(color, idx) {
   return `
     <div class="itemCard" data-idx="${idx}" style="display:flex;gap:10px;align-items:center">
-      <div class="swatch" style="background:${color.hex};width:28px;height:28px" title="${escapeHtml(color.name)}"></div>
+      <div class="swatch" style="background:${escapeHtml(color.hex)};width:28px;height:28px" title="${escapeHtml(color.name)}"></div>
 
       <div style="flex:1;display:grid;grid-template-columns: 1fr 1fr;gap:10px">
         <label style="margin:0">
@@ -45,12 +46,6 @@ function rowTemplate(color, idx) {
   `;
 }
 
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-  }[m]));
-}
-
 function collectColors(editorEl) {
   const rows = [...editorEl.querySelectorAll(".itemCard")];
   return rows.map(r => {
@@ -58,6 +53,10 @@ function collectColors(editorEl) {
     const hex = r.querySelector(".cHex").value.trim();
     return { name, hex };
   }).filter(c => c.name && c.hex);
+}
+
+function refreshExport(colors) {
+  document.getElementById("exportBox").value = JSON.stringify(colors, null, 2);
 }
 
 function renderEditor(editorEl, colors) {
@@ -81,7 +80,6 @@ function renderEditor(editorEl, colors) {
     });
   });
 
-  // Live swatch update on input
   editorEl.querySelectorAll(".cHex, .cName").forEach(inp => {
     inp.addEventListener("input", () => {
       const updated = collectColors(editorEl);
@@ -92,20 +90,8 @@ function renderEditor(editorEl, colors) {
   });
 }
 
-function refreshExport(colors) {
-  document.getElementById("exportBox").value = JSON.stringify(colors, null, 2);
-}
-
-// ---------------------
-// Password gate (client-side)
-// ---------------------
-function isAuthed() {
-  return sessionStorage.getItem("admin_authed") === "1";
-}
-
-function setAuthed() {
-  sessionStorage.setItem("admin_authed", "1");
-}
+function isAuthed() { return sessionStorage.getItem("admin_authed") === "1"; }
+function setAuthed() { sessionStorage.setItem("admin_authed", "1"); }
 
 function showPanel() {
   document.getElementById("adminGate").style.display = "none";
@@ -132,18 +118,18 @@ async function initPanel() {
   document.getElementById("btnSaveLocal").addEventListener("click", () => {
     const updated = collectColors(editor);
     saveLocalOverride(updated);
-    hint.textContent = "✅ Запазено локално. За публично: Export → обнови colors.json в GitHub.";
+    hint.textContent = "✅ Запазено локално. Export → обнови colors.json в GitHub за публично.";
     refreshExport(updated);
   });
 
   document.getElementById("btnClearLocal").addEventListener("click", () => {
     clearLocalOverride();
-    hint.textContent = "🧹 Локалният override е изчистен. Сайтът ще използва colors.json.";
+    hint.textContent = "🧹 Локалният override е изчистен (ще се ползва colors.json).";
   });
 
   document.getElementById("btnExport").addEventListener("click", () => {
     refreshExport(collectColors(editor));
-    hint.textContent = "📦 Export готов. Копирай текста и замени colors.json в GitHub repo.";
+    hint.textContent = "📦 Export готов. Копирай и замени colors.json в GitHub repo.";
   });
 
   document.getElementById("btnImport").addEventListener("click", () => {
@@ -154,7 +140,7 @@ async function initPanel() {
       colors.splice(0, colors.length, ...imported);
       renderEditor(editor, colors);
       hint.textContent = "✅ Import OK. Запази локално или export за GitHub.";
-    } catch (e) {
+    } catch {
       hint.textContent = "❌ Невалиден JSON.";
     }
   });
@@ -182,7 +168,6 @@ async function initPanel() {
     if (e.key === "Enter") attempt();
   });
 
-  // already authed in this tab session
   if (isAuthed()) {
     showPanel();
     initPanel();

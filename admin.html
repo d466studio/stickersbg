@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logoMark">A</div>
+      <div class="logoBox"><div style="font-weight:900;color:var(--yellow)">A</div></div>
       <div class="brandText">
         <div class="brandName">ADMIN</div>
         <div class="brandTag">управление на цветове</div>
@@ -21,8 +21,6 @@
   </header>
 
   <main class="container">
-
-    <!-- Password gate -->
     <section class="card" id="adminGate">
       <h1>Вход</h1>
       <p class="muted">Въведи парола за достъп до admin панела.</p>
@@ -40,12 +38,10 @@
       <p class="muted small" id="gateHint"></p>
     </section>
 
-    <!-- Panel (hidden until login) -->
     <section class="card" id="adminPanel" style="display:none">
       <h1>Налични цветове</h1>
       <p class="muted">
-        В GitHub Pages това е статичен сайт. Тук редактираш списъка локално и:
-        <b>Export</b> → заменяш <b>colors.json</b> в GitHub repo.
+        Редактирай цветове. След това натисни <b>Export</b> и замени съдържанието на <b>colors.json</b> в GitHub repo.
       </p>
 
       <div class="divider"></div>
@@ -77,7 +73,6 @@
         </div>
       </div>
     </section>
-
   </main>
 
   <script src="admin.js"></script>
