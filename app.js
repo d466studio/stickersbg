@@ -15,13 +15,17 @@ const FALLBACK_COLORS = [
 ];
 
 const POPULAR_TEXTS = [
-  { title:"LOW & SLOW", meta:"Текст • clean", pills:["едноцветно"], preset:{ text:"LOW & SLOW", width:40 } },
-  { title:"NO RISK NO FUN", meta:"Текст • спорт", pills:["едноцветно"], preset:{ text:"NO RISK NO FUN", width:60 } },
-  { title:"STANCE", meta:"Късо • агресивно", pills:["компактно"], preset:{ text:"STANCE", width:25 } },
-  { title:"TURBO", meta:"Късо • clean", pills:["едноцветно"], preset:{ text:"TURBO", width:25 } },
-  { title:"TRACK DAY", meta:"Писта • текст", pills:["едноцветно"], preset:{ text:"TRACK DAY", width:50 } },
-  { title:"DRIVEN", meta:"Текст • минимал", pills:["популярно"], preset:{ text:"DRIVEN", width:35 } }
+  { id:"low-slow", title:"LOW & SLOW", meta:"Текст • clean", pills:["едноцветно"], image:"assets/popular/low-slow.svg", preset:{ text:"LOW & SLOW", width:40 } },
+  { id:"no-risk-no-fun", title:"NO RISK NO FUN", meta:"Текст • спорт", pills:["едноцветно"], image:"assets/popular/no-risk-no-fun.svg", preset:{ text:"NO RISK NO FUN", width:60 } },
+  { id:"stance", title:"STANCE", meta:"Късо • агресивно", pills:["компактно"], image:"assets/popular/stance.svg", preset:{ text:"STANCE", width:25 } },
+  { id:"turbo", title:"TURBO", meta:"Късо • clean", pills:["едноцветно"], image:"assets/popular/turbo.svg", preset:{ text:"TURBO", width:25 } },
+  { id:"track-day", title:"TRACK DAY", meta:"Писта • текст", pills:["едноцветно"], image:"assets/popular/track-day.svg", preset:{ text:"TRACK DAY", width:50 } },
+  { id:"driven", title:"DRIVEN", meta:"Текст • минимал", pills:["популярно"], image:"assets/popular/driven.svg", preset:{ text:"DRIVEN", width:35 } }
 ];
+
+// NADPISI modes: custom text vs ready-made popular preset
+let NP_MODE = "custom"; // "custom" | "popular"
+let NP_SELECTED_POPULAR = null;
 
 const AUTO_BY_BRAND = {
   "BMW": [
@@ -373,15 +377,29 @@ function estimatePrice({ widthCm, extraColorsCount, extraBase = 0 }){
 
 // Live previews
 function updateNadpisi(){
-  const text = $("npText")?.value || "YOUR TEXT";
+  const text = $("npText")?.value || "";
   const width = Number($("npWidth")?.value || 40);
   const font = $("npFont")?.value || "Roboto";
   const mainColor = $("npMainColor")?.value || "#ffd400";
-  const extras = getExtraColors($("npExtraColorsHidden"));
+  const extras = NP_MODE === "popular" ? [] : getExtraColors($("npExtraColorsHidden"));
 
-  const p = $("npPreviewText");
+  // In popular mode we show a ready-made sticker image (asset), not editable text.
+  const readyImg = $("npReadyImg");
+  const previewText = $("npPreviewText");
+  if(NP_MODE === "popular" && NP_SELECTED_POPULAR?.image){
+    if(readyImg){
+      readyImg.src = NP_SELECTED_POPULAR.image;
+      readyImg.style.display = "block";
+    }
+    if(previewText) previewText.style.display = "none";
+  }else{
+    if(readyImg) readyImg.style.display = "none";
+    if(previewText) previewText.style.display = "block";
+  }
+
+  const p = previewText;
   if(p){
-    p.textContent = text;
+    p.textContent = text || "";
     p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
     p.style.color = mainColor;
     p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
@@ -394,7 +412,7 @@ function updateNadpisi(){
 }
 
 function updateStikeri(){
-  const text = $("stText")?.value || "BG STICKERS";
+  const text = ($("stText")?.value || "").trim();
   const width = Number($("stWidth")?.value || 40);
   const font = $("stFont")?.value || "Roboto";
   const mainColor = $("stMainColor")?.value || "#ffd400";
@@ -402,7 +420,9 @@ function updateStikeri(){
 
   const p = $("stPreviewText");
   if(p){
+    // If user wants ONLY the uploaded image and didn't enter text, don't show default text.
     p.textContent = text;
+    p.style.display = text ? "block" : "none";
     p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
     p.style.color = mainColor;
     p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
@@ -412,6 +432,52 @@ function updateStikeri(){
 
   const est = estimatePrice({ widthCm: width, extraColorsCount: extras.length, extraBase: 2 });
   if($("stPrice")) $("stPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`;
+}
+
+function setNadpisiMode(mode, popularItem){
+  NP_MODE = mode === "popular" ? "popular" : "custom";
+  NP_SELECTED_POPULAR = NP_MODE === "popular" ? (popularItem || null) : null;
+
+  const notice = $("npPopularNotice");
+  const noticeTitle = $("npPopularTitle");
+  const hiddenPreset = $("npPopularPreset");
+
+  // Fields that are not allowed in popular mode
+  const hideIds = ["npText", "npHeight", "npFont", "npExtraColors"];
+  hideIds.forEach(id=>{
+    const el = $(id);
+    const wrap = el?.closest("label") || el?.closest(".colorMulti")?.closest("label");
+    if(!wrap) return;
+    wrap.style.display = NP_MODE === "popular" ? "none" : "";
+  });
+
+  // Disable inputs (even if visible due to custom layout changes)
+  ["npText","npHeight","npFont"].forEach(id=>{
+    const el = $(id);
+    if(el) el.disabled = NP_MODE === "popular";
+  });
+  const extraHidden = $("npExtraColorsHidden");
+  if(NP_MODE === "popular" && extraHidden) extraHidden.value = "";
+
+  // In popular mode we keep only width + mainColor
+  if(NP_MODE === "popular"){
+    if(notice) notice.style.display = "block";
+    if(noticeTitle) noticeTitle.textContent = popularItem?.title || "Готов надпис";
+    if(hiddenPreset) hiddenPreset.value = popularItem?.id || popularItem?.title || "";
+
+    // Ensure required text doesn't block submit
+    const txt = $("npText");
+    if(txt){ txt.required = false; txt.value = popularItem?.preset?.text || ""; }
+    // Set a sensible default width
+    if(popularItem?.preset?.width) $("npWidth").value = popularItem.preset.width;
+  }else{
+    if(notice) notice.style.display = "none";
+    if(hiddenPreset) hiddenPreset.value = "";
+    const txt = $("npText");
+    if(txt) txt.required = true;
+  }
+
+  updateNadpisi();
 }
 
 // Tabs
@@ -437,6 +503,7 @@ function renderPopular(gridEl, items, onRequest){
     const card = document.createElement("div");
     card.className = "itemCard";
     card.innerHTML = `
+      ${it.image ? `<div class="itemImgWrap"><img class="itemImg" src="${escapeHtml(it.image)}" alt=""></div>` : ``}
       <div class="itemTitle">${escapeHtml(it.title)}</div>
       <div class="itemMeta">${escapeHtml(it.meta || "")}</div>
       <div class="itemPillRow">${(it.pills||[]).map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("")}</div>
@@ -454,9 +521,7 @@ function renderNadpisiPopular(){
     location.hash = "#nadpisi";
     setTimeout(()=>{
       document.querySelector('[data-tab="nadpisi-custom"]')?.click();
-      if(it.preset?.text) $("npText").value = it.preset.text;
-      if(it.preset?.width) $("npWidth").value = it.preset.width;
-      updateNadpisi();
+      setNadpisiMode("popular", it);
     }, 60);
   });
 }
@@ -590,6 +655,7 @@ window.addEventListener("DOMContentLoaded", async ()=>{
 
   initTabs();
   renderNadpisiPopular();
+  setNadpisiMode("custom");
   initBrandDropdown();
   initGallery();
   initFontUploads();
@@ -618,6 +684,8 @@ window.addEventListener("DOMContentLoaded", async ()=>{
     });
   }
 
+  $("npBackToCustomBtn")?.addEventListener("click", ()=> setNadpisiMode("custom"));
+
   $("npCopy")?.addEventListener("click", async ()=>{
     const ok = await copyText(buildNadpisiSummary());
     $("npSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
@@ -635,7 +703,11 @@ window.addEventListener("DOMContentLoaded", async ()=>{
     $("printSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
   });
 
-  $("formNadpisi")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formNadpisi"), $("npSubmitHint"), { type:"nadpisi_custom" }); });
+  $("formNadpisi")?.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const type = NP_MODE === "popular" ? "nadpisi_popular" : "nadpisi_custom";
+    postForm($("formNadpisi"), $("npSubmitHint"), { type });
+  });
   $("formStikeri")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formStikeri"), $("stSubmitHint"), { type:"stikeri_custom" }); });
   $("formAvtoCustom")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formAvtoCustom"), $("avtoSubmitHint"), { type:"avto_custom" }); });
   $("formPrint")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formPrint"), $("printSubmitHint"), { type:"print_sticker" }); });

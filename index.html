@@ -146,7 +146,16 @@
           <div class="card">
             <h2>Поръчай надпис</h2>
 
+            <div class="notice" id="npPopularNotice" style="display:none">
+              <b id="npPopularTitle"></b>
+              <div class="muted small">Готов надпис (без персонализация). Избери само размер и цвят.</div>
+              <div style="margin-top:10px">
+                <button class="btn" type="button" id="npBackToCustomBtn">Искам персонализиран текст</button>
+              </div>
+            </div>
+
             <form class="form" id="formNadpisi">
+              <input type="hidden" name="popularPreset" id="npPopularPreset" value="" />
               <label>
                 Текст
                 <input type="text" name="text" id="npText" placeholder="Пример: LOW & SLOW" maxlength="40" required />
@@ -257,7 +266,10 @@
                 <span id="npRulerText">~40 см</span>
               </div>
               <div class="previewBox">
-                <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
+                <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
+                  <img id="npReadyImg" alt="готов надпис" style="display:none;max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12)" />
+                  <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
+                </div>
               </div>
             </div>
           </div>
@@ -284,7 +296,7 @@
 
             <label>
               Текст (ако има)
-              <input type="text" name="text" id="stText" placeholder="Пример: BG STICKERS" maxlength="40" required />
+              <input type="text" name="text" id="stText" placeholder="Пример: BG STICKERS" maxlength="40" />
             </label>
 
             <div class="row2">

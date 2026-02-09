@@ -202,6 +202,39 @@ body{
 }
 .itemActions{margin-top:12px; display:flex; gap:10px; flex-wrap:wrap}
 
+.itemImgWrap{
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  padding:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin-bottom:12px;
+}
+.itemImg{
+  width:100%;
+  max-width:260px;
+  height:auto;
+  display:block;
+}
+
+.notice{
+  border-radius:14px;
+  border:1px solid rgba(255,212,0,.22);
+  background: rgba(255,212,0,.06);
+  padding:12px;
+  margin-bottom:12px;
+}
+
+.notice{
+  border-radius:16px;
+  border:1px solid rgba(255,212,0,.25);
+  background: rgba(255,212,0,.08);
+  padding:12px 14px;
+  margin: 12px 0 6px;
+}
+
 /* Forms */
 .form{display:flex; flex-direction:column; gap:12px}
 label{display:flex; flex-direction:column; gap:6px; font-weight:900; font-size:13px}

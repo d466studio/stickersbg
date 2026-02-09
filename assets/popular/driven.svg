@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 220">
+  <defs>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="800" height="220" fill="none"/>
+  <text id="t" x="400" y="140" text-anchor="middle"
+        font-family="Oswald, Impact, Arial Black, Arial, sans-serif"
+        font-size="120" font-weight="700"
+        fill="#111"
+        stroke="#111"
+        stroke-width="2"
+        filter="url(#shadow)">
+    DRIVEN
+  </text>
+</svg>
