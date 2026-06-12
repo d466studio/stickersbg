@@ -96,6 +96,8 @@ function setAuthed() { sessionStorage.setItem("admin_authed", "1"); }
 function showPanel() {
   document.getElementById("adminGate").style.display = "none";
   document.getElementById("adminPanel").style.display = "block";
+  const f = document.getElementById("adminFonts");
+  if (f) f.style.display = "block";
 }
 
 async function initPanel() {
@@ -173,3 +175,136 @@ async function initPanel() {
     initPanel();
   }
 })();
+
+
+// --- Fonts: stored locally in IndexedDB so they appear in the designer font dropdown (this browser) ---
+const FONT_DB_NAME = "bg_stickers_fonts";
+const FONT_DB_VERSION = 1;
+const FONT_STORE = "fonts";
+
+function openFontDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(FONT_DB_NAME, FONT_DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(FONT_STORE)) {
+        db.createObjectStore(FONT_STORE, { keyPath: "id" });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function fontIdFromFile(file) {
+  const base = (file && file.name ? file.name : "font").replace(/\.[^.]+$/, "");
+  return base.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now();
+}
+
+function normalizeFamilyName(name) {
+  const n = String(name || "").trim();
+  if (!n) return "";
+  // Title-case-ish while keeping acronyms
+  return n.split(/\s+/).map(w => w.length <= 3 ? w.toUpperCase() : (w[0].toUpperCase()+w.slice(1))).join(" ");
+}
+
+async function saveFontToDB(font) {
+  const db = await openFontDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FONT_STORE, "readwrite");
+    tx.objectStore(FONT_STORE).put(font);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function loadAllFontsFromDB() {
+  const db = await openFontDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FONT_STORE, "readonly");
+    const req = tx.objectStore(FONT_STORE).getAll();
+    req.onsuccess = () => resolve(req.result || []);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function deleteFontFromDB(id) {
+  const db = await openFontDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(FONT_STORE, "readwrite");
+    tx.objectStore(FONT_STORE).delete(id);
+    tx.oncomplete = () => resolve(true);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+async function bufferFromFile(file) {
+  return await file.arrayBuffer();
+}
+
+async function initFontAdmin() {
+  const listEl = document.getElementById("fontList");
+  const nameEl = document.getElementById("fontName");
+  const fileEl = document.getElementById("fontFile");
+  const btn = document.getElementById("btnAddFont");
+  const hint = document.getElementById("fontHint");
+  if (!listEl || !fileEl || !btn) return;
+
+  async function refresh() {
+    const fonts = await loadAllFontsFromDB();
+    listEl.innerHTML = "";
+    if (!fonts.length) {
+      listEl.innerHTML = '<p class="muted">Няма качени шрифтове.</p>';
+      return;
+    }
+    fonts.sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+    fonts.forEach(f => {
+      const row = document.createElement("div");
+      row.className = "itemCard";
+      row.style.display = "flex";
+      row.style.alignItems = "center";
+      row.style.justifyContent = "space-between";
+      row.style.gap = "10px";
+      row.innerHTML = `
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700">${escapeHtml(f.family || "Font")}</div>
+          <div class="muted small" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(f.fileName || "")}</div>
+        </div>
+        <button class="btn" type="button" data-del="${escapeHtml(f.id)}">Delete</button>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  listEl.addEventListener("click", async (e) => {
+    const btn = e.target && e.target.closest && e.target.closest("button[data-del]");
+    if (!btn) return;
+    const id = btn.getAttribute("data-del");
+    await deleteFontFromDB(id);
+    await refresh();
+  });
+
+  btn.addEventListener("click", async () => {
+    const file = fileEl.files && fileEl.files[0];
+    if (!file) { if (hint) hint.textContent = "Избери файл."; return; }
+    const ok = /\.(ttf|otf|woff|woff2)$/i.test(file.name);
+    if (!ok) { if (hint) hint.textContent = "Моля качи TTF/OTF/WOFF/WOFF2."; return; }
+    const customName = normalizeFamilyName(nameEl && nameEl.value);
+    const family = customName || normalizeFamilyName(file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g," "));
+    try {
+      if (hint) hint.textContent = "Качване…";
+      const buffer = await bufferFromFile(file);
+      await saveFontToDB({ id: fontIdFromFile(file), family, fileName: file.name, mime: file.type, buffer, savedAt: Date.now() });
+      if (hint) hint.textContent = "✅ Добавен: " + family;
+      if (nameEl) nameEl.value = "";
+      fileEl.value = "";
+      await refresh();
+    } catch (e) {
+      console.error(e);
+      if (hint) hint.textContent = "Грешка при запис. Опитай отново.";
+    }
+  });
+
+  await refresh();
+}
+

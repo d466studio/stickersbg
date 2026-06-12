@@ -1,721 +1,1679 @@
-const CONFIG = {
-  brandName: "BG STICKERS",
-  instagram: "@thebgstickers",
-  formEndpoint: "", // optional: Formspree/Getform endpoint
-  contactEmail: "you@example.com"
-};
+// Main bootstrap/orchestrator for the BG STICKERS site.
+// Relies on helpers defined in:
+// - storage.js  (CONFIG, loadColors, safeFetchJson)
+// - pricing.js  (estimatePrice)
+// - editor.js   (UI helpers, previews, fonts, gallery)
+// - checkout.js (copyText, summaries, postForm)
+// - router.js   (hash routing, independent of fetch/fonts)
 
-const FALLBACK_COLORS = [
-  { name: "Черно", hex: "#0b0d10" },
-  { name: "Бяло", hex: "#f5f7fa" },
-  { name: "Жълто", hex: "#ffd400" },
-  { name: "Червено", hex: "#ff3b30" },
-  { name: "Синьо", hex: "#2f80ed" },
-  { name: "Зелено", hex: "#27ae60" }
-];
-
-const POPULAR_TEXTS = [
-  { id:"low-slow", title:"LOW & SLOW", meta:"Текст • clean", pills:["едноцветно"], image:"assets/popular/low-slow.svg", preset:{ text:"LOW & SLOW", width:40 } },
-  { id:"no-risk-no-fun", title:"NO RISK NO FUN", meta:"Текст • спорт", pills:["едноцветно"], image:"assets/popular/no-risk-no-fun.svg", preset:{ text:"NO RISK NO FUN", width:60 } },
-  { id:"stance", title:"STANCE", meta:"Късо • агресивно", pills:["компактно"], image:"assets/popular/stance.svg", preset:{ text:"STANCE", width:25 } },
-  { id:"turbo", title:"TURBO", meta:"Късо • clean", pills:["едноцветно"], image:"assets/popular/turbo.svg", preset:{ text:"TURBO", width:25 } },
-  { id:"track-day", title:"TRACK DAY", meta:"Писта • текст", pills:["едноцветно"], image:"assets/popular/track-day.svg", preset:{ text:"TRACK DAY", width:50 } },
-  { id:"driven", title:"DRIVEN", meta:"Текст • минимал", pills:["популярно"], image:"assets/popular/driven.svg", preset:{ text:"DRIVEN", width:35 } }
-];
-
-// NADPISI modes: custom text vs ready-made popular preset
-let NP_MODE = "custom"; // "custom" | "popular"
-let NP_SELECTED_POPULAR = null;
-
-const AUTO_BY_BRAND = {
-  "BMW": [
-    { title:"Windshield Banner (BMW)", meta:"Предно стъкло", pills:["банер"] },
-    { title:"Side stripes (M-style)", meta:"Странично", pills:["спорт"] },
-    { title:"Rear text (BMW club)", meta:"Задно", pills:["минимал"] }
-  ],
-  "VW": [
-    { title:"Windshield Banner (VW)", meta:"Предно", pills:["банер"] },
-    { title:"Side text (VAG)", meta:"Странично", pills:["clean"] },
-    { title:"Rear small decal", meta:"Задно", pills:["малък"] }
-  ],
-  "AUDI": [
-    { title:"Windshield Banner (AUDI)", meta:"Предно", pills:["банер"] },
-    { title:"Side quattro text", meta:"Странично", pills:["clean"] },
-    { title:"Rear minimal text", meta:"Задно", pills:["минимал"] }
-  ],
-  "MERCEDES": [
-    { title:"Windshield Banner (MB)", meta:"Предно", pills:["банер"] },
-    { title:"Side AMG text", meta:"Странично", pills:["спорт"] },
-    { title:"Rear small tag", meta:"Задно", pills:["малък"] }
-  ],
-  "ДРУГО": [
-    { title:"Universal windshield text", meta:"Предно", pills:["универсален"] },
-    { title:"Universal side text", meta:"Странично", pills:["универсален"] },
-    { title:"Universal rear text", meta:"Задно", pills:["универсален"] }
-  ]
-};
-
-const $ = (id) => document.getElementById(id);
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+// --- Custom Select (non-native dropdown) ---
+// Native <select>/<option> styling differs between browsers and limits control.
+// We keep the original <select> in the DOM (for form submits + existing logic)
+// and render a fully custom dropdown UI next to it.
+function initCustomSelects() {
+  const selects = Array.prototype.slice.call(document.querySelectorAll('select.jsCustomSelect'));
+  selects.forEach(function (sel) {
+    if (!sel || sel.dataset.customized === '1') return;
+    sel.dataset.customized = '1';
+    makeCustomSelect(sel);
+  });
 }
 
-function isBlackHex(hex){
-  const h = String(hex || "").trim().toLowerCase();
-  return h === "#000" || h === "#000000" || h === "#0b0d10";
-}
+function makeCustomSelect(selectEl) {
+  if (!selectEl) return;
 
-function setPreviewBoxContrast(previewTextEl, mainColorHex){
-  // When user selects black text, switch preview background to white for readability.
-  const box = previewTextEl?.closest(".previewBox");
-  if(!box) return;
-  if(isBlackHex(mainColorHex)){
-    box.style.background = "#ffffff";
-    box.style.borderColor = "rgba(0,0,0,.22)";
-  }else{
-    box.style.background = "";
-    box.style.borderColor = "";
+  // Wrapper
+  const wrap = document.createElement('div');
+  wrap.className = 'customSelect';
+  wrap.tabIndex = -1;
+
+  // Button
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'customSelectBtn';
+  btn.setAttribute('aria-haspopup', 'listbox');
+  btn.setAttribute('aria-expanded', 'false');
+
+  // Menu
+  const menu = document.createElement('div');
+  menu.className = 'customSelectMenu';
+  menu.setAttribute('role', 'listbox');
+
+  // Insert into DOM (after select)
+  selectEl.style.display = 'none';
+  selectEl.parentNode.insertBefore(wrap, selectEl.nextSibling);
+  wrap.appendChild(btn);
+  wrap.appendChild(menu);
+
+  function close() {
+    wrap.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
   }
-}
 
-// Font upload (TTF/OTF/WOFF/WOFF2) using the FontFace API.
-
-// Persist uploaded fonts per-user (this browser) via IndexedDB.
-// - Fonts remain available after refresh / reopen.
-// - Fonts stay only on the current device/browser (not shared, not server-stored).
-const FONT_DB_NAME = "bg_stickers_fonts";
-const FONT_DB_VERSION = 1;
-const FONT_STORE = "fonts";
-
-function openFontDB(){
-  return new Promise((resolve, reject)=>{
-    const req = indexedDB.open(FONT_DB_NAME, FONT_DB_VERSION);
-    req.onupgradeneeded = ()=>{
-      const db = req.result;
-      if(!db.objectStoreNames.contains(FONT_STORE)){
-        db.createObjectStore(FONT_STORE, { keyPath: "id" });
-      }
-    };
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
-  });
-}
-
-async function saveFontToDB({ id, family, fileName, mime, buffer }){
-  const db = await openFontDB();
-  return new Promise((resolve, reject)=>{
-    const tx = db.transaction(FONT_STORE, "readwrite");
-    tx.objectStore(FONT_STORE).put({ id, family, fileName, mime, buffer, savedAt: Date.now() });
-    tx.oncomplete = ()=> resolve(true);
-    tx.onerror = ()=> reject(tx.error);
-  });
-}
-
-async function loadAllFontsFromDB(){
-  const db = await openFontDB();
-  return new Promise((resolve, reject)=>{
-    const tx = db.transaction(FONT_STORE, "readonly");
-    const req = tx.objectStore(FONT_STORE).getAll();
-    req.onsuccess = ()=> resolve(req.result || []);
-    req.onerror = ()=> reject(req.error);
-  });
-}
-
-async function registerFontFaceFromBuffer(family, buffer, mime){
-  const blob = new Blob([buffer], { type: mime || "font/ttf" });
-  const url = URL.createObjectURL(blob);
-  const face = new FontFace(family, `url(${url})`);
-  await face.load();
-  document.fonts.add(face);
-  // Note: keep the blob URL alive for the session. (Revoking it would break the font.)
-  return true;
-}
-
-function _fontIdFromFile(file){
-  return `${file.name}__${file.size}__${file.lastModified}`;
-}
-
-function _hashStringDjb2(str){
-  let h = 5381;
-  for(let i=0;i<str.length;i++) h = ((h << 5) + h) ^ str.charCodeAt(i);
-  // unsigned 32-bit
-  return (h >>> 0).toString(36);
-}
-function _sanitizeFontFamily(name){
-  return String(name || "Custom Font")
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[_-]+/g, " ")
-    .replace(/[^a-zA-Z0-9À-ɏЀ-ӿ\s]/g, "")
-    .trim() || "Custom Font";
-}
-
-function _stableUserFontFamily(file){
-  // Create a stable family name so a saved font reloads with the same name.
-  // Prefix avoids collisions with system fonts.
-  const base = _sanitizeFontFamily(file?.name);
-  const id = _fontIdFromFile(file);
-  const h = _hashStringDjb2(id);
-  return `User: ${base} (${h})`;
-}
-
-function _ensureUploadedOptgroup(selectEl){
-  if(!selectEl) return null;
-  let g = selectEl.querySelector('optgroup[data-uploaded="1"]');
-  if(g) return g;
-  g = document.createElement('optgroup');
-  g.label = "Качени";
-  g.setAttribute('data-uploaded', '1');
-  selectEl.insertBefore(g, selectEl.firstChild);
-  return g;
-}
-
-function _addFontOption(selectEl, family){
-  const g = _ensureUploadedOptgroup(selectEl);
-  // Prevent duplicates
-  const exists = Array.from(selectEl.options).some(o => (o.value || "") === family);
-  if(exists) return;
-  const opt = document.createElement('option');
-  opt.value = family;
-  opt.textContent = family;
-  g.appendChild(opt);
-}
-
-async function loadAndRegisterUserFont(file){
-  if(!file) return null;
-  const family = _stableUserFontFamily(file);
-  const buf = await file.arrayBuffer();
-  // Use buffer-based registration (more consistent across mime types)
-  await registerFontFaceFromBuffer(family, buf, file.type);
-  return { family, buffer: buf };
-}
-
-async function bootstrapSavedFonts(){
-  if(!('indexedDB' in window) || !('FontFace' in window) || !document.fonts) return;
-  try{
-    const saved = await loadAllFontsFromDB();
-    if(!Array.isArray(saved) || !saved.length) return;
-    for(const f of saved){
-      try{
-        await registerFontFaceFromBuffer(f.family, f.buffer, f.mime);
-        ['npFont','stFont'].forEach(id => _addFontOption($(id), f.family));
-      }catch(err){
-        console.warn('Failed to load saved font', f?.family, err);
-      }
-    }
-  }catch(err){
-    console.warn('Font DB bootstrap failed', err);
+  function open() {
+    wrap.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
   }
-}
 
-function initFontUploads(){
-  const inputs = [
-    { inputId:'npFontUpload', selectId:'npFont', hintId:'npFontUploadHint', onUpdate:updateNadpisi },
-    { inputId:'stFontUpload', selectId:'stFont', hintId:'stFontUploadHint', onUpdate:updateStikeri },
-  ];
+  function toggle() {
+    if (wrap.classList.contains('open')) close(); else open();
+  }
 
-  inputs.forEach(({inputId, selectId, hintId, onUpdate})=>{
-    const inp = $(inputId);
-    const sel = $(selectId);
-    const hint = $(hintId);
-    if(!inp || !sel) return;
+  function selectedText() {
+    const opt = selectEl.options && selectEl.selectedIndex >= 0 ? selectEl.options[selectEl.selectedIndex] : null;
+    return (opt && opt.textContent) ? opt.textContent.trim() : '';
+  }
 
-    inp.addEventListener('change', async ()=>{
-      const file = inp.files && inp.files[0];
-      if(!file) return;
+  function render() {
+    // Button label
+    btn.textContent = selectedText() || '—';
 
-      if(!('FontFace' in window) || !document.fonts){
-        if(hint) hint.textContent = "Този браузър не поддържа зареждане на шрифтове директно.";
+    // Menu options
+    menu.innerHTML = '';
+
+    // Helper to add item
+    function addItem(label, value, disabled, isHeader) {
+      const el = document.createElement('div');
+      el.className = isHeader ? 'customSelectGroup' : 'customSelectItem';
+      el.textContent = label;
+      if (isHeader) {
+        menu.appendChild(el);
         return;
       }
+      el.setAttribute('role', 'option');
+      el.dataset.value = value;
+      if (disabled) el.classList.add('disabled');
+      if (String(value) === String(selectEl.value)) el.classList.add('selected');
+      el.addEventListener('click', function () {
+        if (disabled) return;
+        selectEl.value = value;
+        // Keep legacy handlers working
+        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+        render();
+        close();
+      });
+      menu.appendChild(el);
+    }
 
-      const okTypes = ['font/ttf','font/otf','font/woff','font/woff2','application/font-woff','application/font-woff2','application/octet-stream'];
-      const extOk = /\.(ttf|otf|woff|woff2)$/i.test(file.name);
-      if(!extOk && !okTypes.includes(file.type)){
-        if(hint) hint.textContent = "Моля качи TTF/OTF/WOFF/WOFF2 файл.";
-        inp.value = "";
-        return;
-      }
-
-      try{
-        if(hint) hint.textContent = "Зареждам шрифта…";
-        const loaded = await loadAndRegisterUserFont(file);
-        if(!loaded?.family) throw new Error('no family');
-        const family = loaded.family;
-        // Add to both designers so it appears everywhere.
-        ['npFont','stFont'].forEach(id => _addFontOption($(id), family));
-        sel.value = family;
-
-        // Persist for this browser
-        if('indexedDB' in window){
-          const id = _fontIdFromFile(file);
-          await saveFontToDB({ id, family, fileName: file.name, mime: file.type, buffer: loaded.buffer });
-        }
-
-        if(hint) hint.textContent = `✅ Добавен шрифт: ${family}`;
-        onUpdate && onUpdate();
-      }catch(err){
-        console.error(err);
-        if(hint) hint.textContent = "❌ Не успях да заредя този шрифт. Опитай друг файл (woff2/ttf).";
-      }finally{
-        inp.value = ""; // allow re-upload same file
+    // Build from select children (supports optgroup)
+    Array.prototype.slice.call(selectEl.children || []).forEach(function (child) {
+      if (!child) return;
+      if (child.tagName === 'OPTGROUP') {
+        const gLabel = child.label || '';
+        if (gLabel) addItem(gLabel, '', true, true);
+        Array.prototype.slice.call(child.children || []).forEach(function (opt) {
+          if (!opt || opt.tagName !== 'OPTION') return;
+          addItem(opt.textContent || opt.value, opt.value, opt.disabled, false);
+        });
+      } else if (child.tagName === 'OPTION') {
+        addItem(child.textContent || child.value, child.value, child.disabled, false);
       }
     });
-  });
-}
-
-function currentRoute(){ return (location.hash || "#nachalo").replace("#","") || "nachalo"; }
-
-function setActivePage(route){
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  (document.querySelector(`#page-${route}`) || document.querySelector("#page-nachalo"))?.classList.add("active");
-  document.querySelectorAll(".navLink").forEach(a => a.classList.toggle("active", a.dataset.route === route));
-}
-
-async function safeFetchJson(path){
-  try{
-    const res = await fetch(path, { cache:"no-store" });
-    if(!res.ok) throw new Error(`${path} ${res.status}`);
-    return await res.json();
-  }catch{
-    return null;
   }
-}
 
-async function loadColors(){
-  const ls = localStorage.getItem("vinyl_colors_override");
-  if(ls){ try { return JSON.parse(ls); } catch {} }
-  const json = await safeFetchJson("colors.json");
-  return Array.isArray(json) && json.length ? json : FALLBACK_COLORS;
-}
-
-function renderColorDock(colors){
-  const sw = $("swatches");
-  if(!sw) return;
-  sw.innerHTML = "";
-  colors.forEach(c=>{
-    const el = document.createElement("div");
-    el.className = "swatch";
-    el.style.background = c.hex;
-    el.dataset.tip = `${c.name} • ${c.hex}`;
-    sw.appendChild(el);
-  });
-}
-
-function fillColorSelect(selectEl, colors){
-  if(!selectEl) return;
-  selectEl.innerHTML = "";
-  colors.forEach(c=>{
-    const opt = document.createElement("option");
-    opt.value = c.hex;
-    opt.textContent = c.name;
-    selectEl.appendChild(opt);
-  });
-  const y = colors.find(c=>c.name.toLowerCase().includes("жъл"));
-  if(y) selectEl.value = y.hex;
-}
-
-function renderExtraColors(containerEl, hiddenEl, colors, summaryEl){
-  if(!containerEl || !hiddenEl) return;
-  containerEl.innerHTML = "";
-
-  colors.forEach(c=>{
-    const id = `x_${Math.random().toString(16).slice(2)}`;
-    const label = document.createElement("label");
-    label.className = "colorChk";
-    label.setAttribute("for", id);
-
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.id = id;
-    cb.value = c.hex;
-
-    const dot = document.createElement("span");
-    dot.className = "colorDot";
-    dot.style.background = c.hex;
-
-    const txt = document.createElement("span");
-    txt.textContent = c.name;
-
-    label.appendChild(cb); label.appendChild(dot); label.appendChild(txt);
-    containerEl.appendChild(label);
+  // Click handlers
+  btn.addEventListener('click', function (e) {
+    e.preventDefault();
+    toggle();
   });
 
-  const sync = () => {
-    const chosen = [...containerEl.querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
-    hiddenEl.value = chosen.join(",");
-    if(summaryEl){
-      summaryEl.textContent = chosen.length ? `Доп. цветове: ${chosen.length} избрани` : "Избери доп. цветове";
+  // Close on outside click
+  document.addEventListener('click', function (e) {
+    if (!wrap.contains(e.target)) close();
+  });
+
+  // Basic keyboard controls
+  btn.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggle();
+    } else if (e.key === 'Escape') {
+      close();
     }
-    return chosen;
-  };
-  containerEl.addEventListener("change", sync);
-  sync();
-}
-
-function getExtraColors(hiddenEl){
-  const v = (hiddenEl?.value || "").trim();
-  if(!v) return [];
-  return v.split(",").map(s=>s.trim()).filter(Boolean);
-}
-
-// Pricing rules
-function basePriceByWidth(widthCm){
-  const w = Number(widthCm || 0);
-  if (w <= 10) return 10;
-  if (w <= 50) return 15;
-  if (w <= 100) return 17;
-  if (w <= 150) return 20;
-  if (w <= 200) return 20;
-  return 20;
-}
-function estimatePrice({ widthCm, extraColorsCount, extraBase = 0 }){
-  const base = basePriceByWidth(widthCm) + extraBase;
-  const extra = Math.max(0, extraColorsCount) * 3;
-  return { base, extra, total: base + extra };
-}
-
-// Live previews
-function updateNadpisi(){
-  const text = $("npText")?.value || "";
-  const width = Number($("npWidth")?.value || 40);
-  const font = $("npFont")?.value || "Roboto";
-  const mainColor = $("npMainColor")?.value || "#ffd400";
-  const extras = NP_MODE === "popular" ? [] : getExtraColors($("npExtraColorsHidden"));
-
-  // In popular mode we show a ready-made sticker image (asset), not editable text.
-  const readyImg = $("npReadyImg");
-  const previewText = $("npPreviewText");
-  if(NP_MODE === "popular" && NP_SELECTED_POPULAR?.image){
-    if(readyImg){
-      readyImg.src = NP_SELECTED_POPULAR.image;
-      readyImg.style.display = "block";
-    }
-    if(previewText) previewText.style.display = "none";
-  }else{
-    if(readyImg) readyImg.style.display = "none";
-    if(previewText) previewText.style.display = "block";
-  }
-
-  const p = previewText;
-  if(p){
-    p.textContent = text || "";
-    p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
-    p.style.color = mainColor;
-    p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
-    setPreviewBoxContrast(p, mainColor);
-  }
-  if($("npRulerText")) $("npRulerText").textContent = `~${width} см`;
-
-  const est = estimatePrice({ widthCm: width, extraColorsCount: extras.length, extraBase: 0 });
-  if($("npPrice")) $("npPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`;
-}
-
-function updateStikeri(){
-  const text = ($("stText")?.value || "").trim();
-  const width = Number($("stWidth")?.value || 40);
-  const font = $("stFont")?.value || "Roboto";
-  const mainColor = $("stMainColor")?.value || "#ffd400";
-  const extras = getExtraColors($("stExtraColorsHidden"));
-
-  const p = $("stPreviewText");
-  if(p){
-    // If user wants ONLY the uploaded image and didn't enter text, don't show default text.
-    p.textContent = text;
-    p.style.display = text ? "block" : "none";
-    p.style.fontFamily = `${font}, Roboto, Inter, Arial, Helvetica, sans-serif`;
-    p.style.color = mainColor;
-    p.style.fontSize = `${Math.max(18, Math.min(72, width))}px`;
-    setPreviewBoxContrast(p, mainColor);
-  }
-  if($("stRulerText")) $("stRulerText").textContent = `~${width} см`;
-
-  const est = estimatePrice({ widthCm: width, extraColorsCount: extras.length, extraBase: 2 });
-  if($("stPrice")) $("stPrice").textContent = `${est.total}€ (база ${est.base}€ + ${est.extra}€ за ${extras.length} доп.)`;
-}
-
-function setNadpisiMode(mode, popularItem){
-  NP_MODE = mode === "popular" ? "popular" : "custom";
-  NP_SELECTED_POPULAR = NP_MODE === "popular" ? (popularItem || null) : null;
-
-  const notice = $("npPopularNotice");
-  const noticeTitle = $("npPopularTitle");
-  const hiddenPreset = $("npPopularPreset");
-
-  // Fields that are not allowed in popular mode
-  const hideIds = ["npText", "npHeight", "npFont", "npExtraColors"];
-  hideIds.forEach(id=>{
-    const el = $(id);
-    const wrap = el?.closest("label") || el?.closest(".colorMulti")?.closest("label");
-    if(!wrap) return;
-    wrap.style.display = NP_MODE === "popular" ? "none" : "";
   });
 
-  // Disable inputs (even if visible due to custom layout changes)
-  ["npText","npHeight","npFont"].forEach(id=>{
-    const el = $(id);
-    if(el) el.disabled = NP_MODE === "popular";
+  // Keep in sync if select value changes programmatically
+  selectEl.addEventListener('change', function () {
+    render();
   });
-  const extraHidden = $("npExtraColorsHidden");
-  if(NP_MODE === "popular" && extraHidden) extraHidden.value = "";
 
-  // In popular mode we keep only width + mainColor
-  if(NP_MODE === "popular"){
-    if(notice) notice.style.display = "block";
-    if(noticeTitle) noticeTitle.textContent = popularItem?.title || "Готов надпис";
-    if(hiddenPreset) hiddenPreset.value = popularItem?.id || popularItem?.title || "";
-
-    // Ensure required text doesn't block submit
-    const txt = $("npText");
-    if(txt){ txt.required = false; txt.value = popularItem?.preset?.text || ""; }
-    // Set a sensible default width
-    if(popularItem?.preset?.width) $("npWidth").value = popularItem.preset.width;
-  }else{
-    if(notice) notice.style.display = "none";
-    if(hiddenPreset) hiddenPreset.value = "";
-    const txt = $("npText");
-    if(txt) txt.required = true;
-  }
-
-  updateNadpisi();
-}
-
-// Tabs
-function initTabs(){
-  document.querySelectorAll(".tabBtn").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const page = btn.closest(".page");
-      if(!page) return;
-      page.querySelectorAll(".tabBtn").forEach(b=>b.classList.remove("active"));
-      page.querySelectorAll(".tabPanel").forEach(p=>p.classList.remove("active"));
-      btn.classList.add("active");
-      const targetId = btn.dataset.tab === "nadpisi-pop" ? "tab-nadpisi-pop" : "tab-nadpisi-custom";
-      document.getElementById(targetId)?.classList.add("active");
+  // Observe option changes (font uploads, color list rebuilds)
+  try {
+    const mo = new MutationObserver(function () {
+      render();
     });
-  });
-}
+    mo.observe(selectEl, { childList: true, subtree: true, attributes: true });
+  } catch (_) {}
 
-// Popular cards
-function renderPopular(gridEl, items, onRequest){
-  if(!gridEl) return;
-  gridEl.innerHTML = "";
-  items.forEach(it=>{
-    const card = document.createElement("div");
-    card.className = "itemCard";
-    card.innerHTML = `
-      ${it.image ? `<div class="itemImgWrap"><img class="itemImg" src="${escapeHtml(it.image)}" alt=""></div>` : ``}
-      <div class="itemTitle">${escapeHtml(it.title)}</div>
-      <div class="itemMeta">${escapeHtml(it.meta || "")}</div>
-      <div class="itemPillRow">${(it.pills||[]).map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join("")}</div>
-      ${onRequest ? `<div class="itemActions"><button class="btn btnPrimary">Заяви</button></div>` : ``}
-    `;
-    if(onRequest){
-      card.querySelector("button")?.addEventListener("click", ()=>onRequest(it));
-    }
-    gridEl.appendChild(card);
-  });
-}
-
-function renderNadpisiPopular(){
-  renderPopular($("nadpisiPopularGrid"), POPULAR_TEXTS, (it)=>{
-    location.hash = "#nadpisi";
-    setTimeout(()=>{
-      document.querySelector('[data-tab="nadpisi-custom"]')?.click();
-      setNadpisiMode("popular", it);
-    }, 60);
-  });
-}
-
-function initBrandDropdown(){
-  const sel = $("brandSelect");
-  if(!sel) return;
-  sel.innerHTML = "";
-  Object.keys(AUTO_BY_BRAND).forEach(b=>{
-    const opt = document.createElement("option");
-    opt.value = b; opt.textContent = b;
-    sel.appendChild(opt);
-  });
-  sel.value = "BMW";
-  const render = ()=> renderPopular($("avtoPopularGrid"), AUTO_BY_BRAND[sel.value] || AUTO_BY_BRAND["ДРУГО"], null);
-  sel.addEventListener("change", render);
   render();
 }
 
-// Gallery
-async function initGallery(){
-  const grid = $("galleryGrid");
-  const tagSel = $("galleryTag");
-  if(!grid || !tagSel) return;
+window.addEventListener("DOMContentLoaded", async function () {
+  const _safe = (label, fn) => { try { return fn(); } catch (e) { console.error('[init]', label, e); } };
+  let colors = []
+  try { colors = await loadColors(); } catch (e) { console.error('[init] loadColors', e); colors = []; }
+  _safe('renderColorDock', () => renderColorDock(colors));
 
-  const data = await safeFetchJson("gallery.json");
-  const items = Array.isArray(data) ? data : [];
-  const tags = new Set();
-  items.forEach(x => (x.tags||[]).forEach(t => tags.add(String(t).toLowerCase())));
-  tagSel.innerHTML = `<option value="all">Всички</option>`;
-  [...tags].sort().forEach(t=>{
-    const opt = document.createElement("option");
-    opt.value = t; opt.textContent = t;
-    tagSel.appendChild(opt);
+  // Show admin-only UI (font upload etc.) only when admin is authenticated locally
+  try {
+    const isAdmin = localStorage.getItem("admin_authed") === "1";
+    document.querySelectorAll(".adminOnly").forEach(function(el){
+      el.style.display = isAdmin ? "" : "none";
+    });
+  } catch(e) {}
+
+  _safe('fillColorSelect npMainColor', () => fillColorSelect(document.getElementById("npMainColor"), colors));
+  _safe('fillColorSelect stMainColor', () => fillColorSelect(document.getElementById("stMainColor"), colors));
+  _safe('fillColorSelect stBgColor', () => fillColorSelect(document.getElementById("stBgColor"), colors));
+  _safe('fillColorSelect avtoColor', () => fillColorSelect(document.getElementById("avtoColor"), colors));
+
+  _safe('renderExtraColors', () => renderExtraColors(
+    document.getElementById("npExtraColors"),
+    document.getElementById("npExtraColorsHidden"),
+    colors,
+    null
+  ));
+  // Sticker designer is intentionally strict: no multi-color selection UI.
+
+  _safe('initTabs', () => initTabs());
+  _safe('renderNadpisiPopular', () => renderNadpisiPopular());
+  _safe('setNadpisiMode', () => setNadpisiMode("custom"));
+  _safe('initBrandDropdown', () => initBrandDropdown());
+  _safe('initGallery', () => initGallery());
+  // Allow font self-upload (TTF/OTF/WOFF/WOFF2) with guardrails.
+  _safe('bootstrapSavedFonts', () => bootstrapSavedFonts());
+  _safe('initFontUploads', () => initFontUploads());
+
+  // Replace native selects with custom dropdowns (fonts/colors/finish/shipping/etc).
+  _safe('initCustomSelects', () => initCustomSelects());
+
+  // --- Designer canvas panning (mouse / touch) ---
+  (function initDesignerPanning(){
+    const box = document.getElementById('stPreviewBox') || document.querySelector('#page-design .previewBox');
+    const pan = document.getElementById('stPanLayer');
+    if (!box || !pan) return;
+
+    // Pan + zoom state
+    let panX = 0, panY = 0;
+    let scale = 1;
+
+    // Drag / inertia state
+    let startX = 0, startY = 0;
+    let lastT = 0;
+    let vx = 0, vy = 0; // px/ms
+    let active = false;
+    let raf = 0;
+
+    // Drag mode: pan the canvas, or move the active layer (per-layer movement)
+    let dragMode = 'pan'; // 'pan' | 'layer'
+    let dragLayerIdx = -1;
+    let layerStartX = 0, layerStartY = 0;
+
+    function apply(){
+      pan.style.setProperty('--pan-x', panX + 'px');
+      pan.style.setProperty('--pan-y', panY + 'px');
+      pan.style.setProperty('--pan-scale', String(scale));
+    }
+
+    function resizeCanvas(){
+      try{
+        const r = box.getBoundingClientRect();
+        // Give generous pan range so long text / big backgrounds can be explored.
+        pan.style.setProperty('--pan-w', Math.round(r.width * 3.2) + 'px');
+        pan.style.setProperty('--pan-h', Math.round(r.height * 3.0) + 'px');
+      }catch(e){}
+    }
+
+    function stopInertia(){
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      vx = 0; vy = 0;
+    }
+
+    function startInertia(){
+      stopInertia();
+      const decay = 0.92; // per frame
+      const minV = 0.02; // px/ms
+      let prev = performance.now();
+      raf = requestAnimationFrame(function step(now){
+        const dt = Math.max(8, now - prev);
+        prev = now;
+        // Convert to per-frame movement
+        panX += vx * dt;
+        panY += vy * dt;
+        vx *= decay;
+        vy *= decay;
+        apply();
+        if (Math.abs(vx) > minV || Math.abs(vy) > minV) {
+          raf = requestAnimationFrame(step);
+        } else {
+          stopInertia();
+        }
+      });
+    }
+
+    function setScale(next, anchorClientX, anchorClientY){
+      const clamped = Math.max(0.35, Math.min(3.0, next));
+      if (clamped === scale) return;
+      // Zoom around a point (mouse position). Convert anchor to box-centered coords.
+      const r = box.getBoundingClientRect();
+      const ax = (anchorClientX - (r.left + r.width/2));
+      const ay = (anchorClientY - (r.top + r.height/2));
+      // Adjust pan so the anchor stays visually stable.
+      // Because transform = translate(center + pan) scale(scale), we compensate using scale ratio.
+      const ratio = clamped / scale;
+      panX = ax - (ax - panX) * ratio;
+      panY = ay - (ay - panY) * ratio;
+      scale = clamped;
+      apply();
+    }
+
+    function resetView(){
+      stopInertia();
+      panX = 0; panY = 0; scale = 1;
+      apply();
+    }
+
+    function zoomToFit(){
+      stopInertia();
+      // Normalize view so bounds are measured at scale 1.
+      const prev = { panX: panX, panY: panY, scale: scale };
+      panX = 0; panY = 0; scale = 1;
+      apply();
+      requestAnimationFrame(function(){
+        try{
+          const rBox = box.getBoundingClientRect();
+          const els = [];
+          const bg = document.getElementById('stBgPreview');
+          if (bg && bg.style.display !== 'none') els.push(bg);
+          const layers = document.getElementById('stLayersPreview');
+          if (layers) layers.querySelectorAll('.layerEl').forEach(function(el){ els.push(el); });
+          if (!els.length){ resetView(); return; }
+
+          let minL=Infinity, minT=Infinity, maxR=-Infinity, maxB=-Infinity;
+          els.forEach(function(el){
+            const rr = el.getBoundingClientRect();
+            if (!rr || !isFinite(rr.left)) return;
+            minL = Math.min(minL, rr.left);
+            minT = Math.min(minT, rr.top);
+            maxR = Math.max(maxR, rr.right);
+            maxB = Math.max(maxB, rr.bottom);
+          });
+          if (!isFinite(minL) || !isFinite(maxR)) { resetView(); return; }
+          const bw = Math.max(20, maxR - minL);
+          const bh = Math.max(20, maxB - minT);
+          const pad = 0.86; // leave margins
+          const nextScale = Math.max(0.35, Math.min(3.0, pad * Math.min(rBox.width / bw, rBox.height / bh)));
+          panX = 0; panY = 0; scale = nextScale;
+          apply();
+        }catch(e){
+          panX = prev.panX; panY = prev.panY; scale = prev.scale; apply();
+        }
+      });
+    }
+
+    // Cursor style
+    box.style.cursor = 'grab';
+
+    box.addEventListener('pointerdown', function(e){
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+      // Decide if we are moving the active layer or panning the whole canvas.
+      dragMode = 'pan';
+      dragLayerIdx = -1;
+      try {
+        const hit = e.target && e.target.closest ? e.target.closest('.layerEl') : null;
+        const st = (typeof _ensureDesignerState === 'function') ? _ensureDesignerState() : (window.ST_DESIGN_STATE || null);
+        const activeKey = st && st.activeKey ? String(st.activeKey) : 'sticker:0';
+        if (hit && hit.dataset && hit.dataset.key && String(hit.dataset.key).startsWith('sticker:')) {
+          const hitKey = String(hit.dataset.key);
+          // Click selects the layer under the cursor.
+          if (st) {
+            st.activeKey = hitKey;
+            try { _renderLayerBar(true); } catch(e) {}
+            try { _applyInputsFromActiveLayer(); } catch(e) {}
+          }
+          dragMode = 'layer';
+          dragLayerIdx = Number(hitKey.split(':')[1] || 0) || 0;
+          const layer = st && Array.isArray(st.stickerLayers) ? st.stickerLayers[dragLayerIdx] : null;
+          layerStartX = isFinite(Number(layer && layer.offsetX)) ? Number(layer.offsetX) : 0;
+          layerStartY = isFinite(Number(layer && layer.offsetY)) ? Number(layer.offsetY) : 0;
+          box.style.cursor = 'grabbing';
+        } else if (hit && hit.dataset && hit.dataset.key && hit.dataset.key === activeKey && activeKey.startsWith('sticker:')) {
+          dragMode = 'layer';
+          dragLayerIdx = Number(activeKey.split(':')[1] || 0) || 0;
+          const layer = st && Array.isArray(st.stickerLayers) ? st.stickerLayers[dragLayerIdx] : null;
+          layerStartX = isFinite(Number(layer && layer.offsetX)) ? Number(layer.offsetX) : 0;
+          layerStartY = isFinite(Number(layer && layer.offsetY)) ? Number(layer.offsetY) : 0;
+          box.style.cursor = 'grabbing';
+        }
+      } catch (e2) {}
+
+      stopInertia();
+      active = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      lastT = performance.now();
+      vx = 0; vy = 0;
+      box.setPointerCapture && box.setPointerCapture(e.pointerId);
+      box.style.cursor = 'grabbing';
+      e.preventDefault();
+    });
+
+    box.addEventListener('pointermove', function(e){
+      if (!active) return;
+      const now = performance.now();
+      const dt = Math.max(8, now - lastT);
+      lastT = now;
+      const dx = (e.clientX - startX);
+      const dy = (e.clientY - startY);
+      startX = e.clientX;
+      startY = e.clientY;
+      if (dragMode === 'layer' && dragLayerIdx >= 0) {
+        // Move the active layer in design space (account for zoom level).
+        const st = (typeof _ensureDesignerState === 'function') ? _ensureDesignerState() : (window.ST_DESIGN_STATE || null);
+        if (st && Array.isArray(st.stickerLayers) && st.stickerLayers[dragLayerIdx]) {
+          // dx/dy are incremental since the last pointermove.
+          // Accumulate movement so only the dragged layer moves (not the whole canvas).
+          const nx = layerStartX + (dx / scale);
+          const ny = layerStartY + (dy / scale);
+          st.stickerLayers[dragLayerIdx].offsetX = nx;
+          st.stickerLayers[dragLayerIdx].offsetY = ny;
+
+          // Update the running start position so subsequent moves continue from the latest.
+          layerStartX = nx;
+          layerStartY = ny;
+
+          // Apply immediately for smoothness
+          const hit = document.querySelector('.layerEl[data-key="sticker:' + dragLayerIdx + '"]');
+          if (hit) {
+            const rot = isFinite(Number(st.stickerLayers[dragLayerIdx].rotationDeg)) ? Number(st.stickerLayers[dragLayerIdx].rotationDeg) : 0;
+                        const sc = isFinite(Number(st.stickerLayers[dragLayerIdx].scale)) ? Number(st.stickerLayers[dragLayerIdx].scale) : 1;
+            hit.style.transform = `translate(-50%, -50%) translate(${nx}px, ${ny}px) rotate(${rot}deg) scale(${sc})`;
+          }
+        }
+        // layer drag should not build inertia
+        vx = 0; vy = 0;
+      } else {
+        panX += dx;
+        panY += dy;
+        // velocity (px/ms)
+        vx = dx / dt;
+        vy = dy / dt;
+        apply();
+      }
+      e.preventDefault();
+    });
+
+    function end(){
+      if (!active) return;
+      active = false;
+      box.style.cursor = 'grab';
+      // Commit layer move by rerendering once
+      if (dragMode === 'layer') {
+        try { if (typeof window.updateStikeri === 'function') window.updateStikeri(); } catch(e) {}
+      }
+      // Start inertia only if user was actually moving
+      if (dragMode !== 'layer' && (Math.abs(vx) > 0.05 || Math.abs(vy) > 0.05)) startInertia();
+    }
+    box.addEventListener('pointerup', end);
+    box.addEventListener('pointercancel', end);
+
+    // Wheel zoom (trackpad/mouse)
+    box.addEventListener('wheel', function(e){
+      // ctrlKey often means browser zoom on trackpads; still allow canvas zoom but prevent page zoom.
+      e.preventDefault();
+      stopInertia();
+      const dir = e.deltaY > 0 ? -1 : 1;
+      const factor = dir > 0 ? 1.08 : 1/1.08;
+      setScale(scale * factor, e.clientX, e.clientY);
+    }, { passive: false });
+
+    // Double click = zoom to fit
+    box.addEventListener('dblclick', function(e){
+      e.preventDefault();
+      zoomToFit();
+    });
+
+    // Keyboard panning (when design page is active)
+    document.addEventListener('keydown', function(e){
+      const designPage = document.getElementById('page-design');
+      if (!designPage || !designPage.classList.contains('active')) return;
+      const key = e.key;
+      const step = e.shiftKey ? 80 : 32;
+      if (key === 'ArrowLeft'){ panX += step; apply(); e.preventDefault(); }
+      else if (key === 'ArrowRight'){ panX -= step; apply(); e.preventDefault(); }
+      else if (key === 'ArrowUp'){ panY += step; apply(); e.preventDefault(); }
+      else if (key === 'ArrowDown'){ panY -= step; apply(); e.preventDefault(); }
+      else if ((key === '+' || key === '=' ) && (e.ctrlKey || e.metaKey)) { setScale(scale * 1.08, box.getBoundingClientRect().left + box.getBoundingClientRect().width/2, box.getBoundingClientRect().top + box.getBoundingClientRect().height/2); e.preventDefault(); }
+      else if ((key === '-' ) && (e.ctrlKey || e.metaKey)) { setScale(scale / 1.08, box.getBoundingClientRect().left + box.getBoundingClientRect().width/2, box.getBoundingClientRect().top + box.getBoundingClientRect().height/2); e.preventDefault(); }
+      else if ((key === '0') && (e.ctrlKey || e.metaKey)) { resetView(); e.preventDefault(); }
+    });
+
+    // Hook up zoom buttons if present
+    const gridBtn = document.getElementById('stGridToggle');
+    const whiteBtn = document.getElementById('stWhiteBgToggle');
+    const zIn = document.getElementById('stZoomIn');
+    const zOut = document.getElementById('stZoomOut');
+    const zReset = document.getElementById('stZoomReset');
+    function centerAnchor(){
+      const r = box.getBoundingClientRect();
+      return { x: r.left + r.width/2, y: r.top + r.height/2 };
+    }
+    if (zIn) zIn.addEventListener('click', function(){ const a = centerAnchor(); setScale(scale * 1.12, a.x, a.y); });
+    if (zOut) zOut.addEventListener('click', function(){ const a = centerAnchor(); setScale(scale / 1.12, a.x, a.y); });
+    if (zReset) zReset.addEventListener('click', resetView);
+    if (gridBtn) gridBtn.addEventListener('click', function(){
+      box.classList.toggle('gridOn');
+      gridBtn.classList.toggle('active');
+    });
+
+    // White preview background toggle (useful for SVG uploads)
+    function applyWhitePref(){
+      const pref = (typeof window.__ST_PREVIEW_WHITE_BG_PREF__ === 'boolean') ? window.__ST_PREVIEW_WHITE_BG_PREF__ : null;
+      const on = pref === true;
+      if (whiteBtn) whiteBtn.classList.toggle('active', on);
+      // The actual background class is applied in updateStikeri() (editor.js),
+      // but we also apply immediately for responsiveness.
+      if (pref !== null) {
+        box.classList.toggle('whiteBgOn', on);
+      }
+    }
+    if (whiteBtn) {
+      whiteBtn.addEventListener('click', function(){
+        const pref = (typeof window.__ST_PREVIEW_WHITE_BG_PREF__ === 'boolean') ? window.__ST_PREVIEW_WHITE_BG_PREF__ : null;
+        // Toggle explicit preference: null -> true, true -> false, false -> true
+        window.__ST_PREVIEW_WHITE_BG_PREF__ = (pref === true) ? false : true;
+        applyWhitePref();
+        // re-render to apply in context (image mode / dark text)
+        try { if (typeof window.updateStikeri === 'function') window.updateStikeri(); } catch(e) {}
+      });
+      applyWhitePref();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+    apply();
+
+    // Expose for other controls (reset design)
+    window.__ST_CANVAS__ = { resetView: resetView, zoomToFit: zoomToFit };
+  })();
+
+  ["npText", "npWidth", "npFont", "npMainColor"].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", updateNadpisi);
+    el.addEventListener("change", updateNadpisi);
+  });
+  const npExtra = document.getElementById("npExtraColors");
+  if (npExtra) {
+    npExtra.addEventListener("change", updateNadpisi);
+  }
+
+  ["stText", "stTextFlow", "stWidth", "stFont", "stMainColor", "stBackground", "stFinish", "stQty", "stBgColor", "stBgScaleX", "stBgScaleY", "stBgFinish", "stImgRotate", "stImgScale"].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("input", function(){ syncStickerDesignerFromInputs(); updateStikeri(); });
+    el.addEventListener("change", function(){ syncStickerDesignerFromInputs(); updateStikeri(); });
   });
 
-  const render = ()=>{
-    const sel = tagSel.value;
-    const filtered = sel==="all" ? items : items.filter(x => (x.tags||[]).map(t=>String(t).toLowerCase()).includes(sel));
-    grid.innerHTML = "";
-    if(!filtered.length){
-      grid.innerHTML = `<div class="muted small">Няма проекти (добави в gallery.json).</div>`;
+  // Rotation value label
+  (function(){
+    const r = document.getElementById('stImgRotate');
+    const v = document.getElementById('stImgRotateVal');
+    if (!r || !v) return;
+    function sync(){ v.textContent = String(Number(r.value || 0)) + '°'; }
+    r.addEventListener('input', sync);
+    r.addEventListener('change', sync);
+    sync();
+  })();
+
+  // Scale value label
+  (function(){
+    const r = document.getElementById('stImgScale');
+    const v = document.getElementById('stImgScaleVal');
+    if (!r || !v) return;
+    function sync(){ v.textContent = String(Number(r.value || 100)) + '%'; }
+    r.addEventListener('input', sync);
+    r.addEventListener('change', sync);
+    sync();
+  })();
+;
+
+  // Text flow segmented control (single line vs word-per-line).
+  (function initTextFlow(){
+    const hidden = document.getElementById('stTextFlow');
+    // IMPORTANT: there are multiple .segRow blocks on the design page.
+    // Bind directly to the intended buttons so the control never "misses".
+    const singleBtn = document.getElementById('stFlowSingle');
+    const wordsBtn = document.getElementById('stFlowWords');
+    function setFlow(v){
+      if (hidden) {
+        hidden.value = v;
+        try {
+          hidden.dispatchEvent(new Event('input', { bubbles: true }));
+          hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        } catch(e) {}
+      }
+      if (singleBtn) singleBtn.classList.toggle('active', v === 'single');
+      if (wordsBtn) wordsBtn.classList.toggle('active', v === 'words');
+      // Ensure designer state gets updated before repaint
+      if (typeof syncStickerDesignerFromInputs === 'function') syncStickerDesignerFromInputs();
+      if (typeof updateStikeri === 'function') updateStikeri();
+    }
+    if (singleBtn) singleBtn.addEventListener('click', function(){ setFlow('single'); });
+    if (wordsBtn) wordsBtn.addEventListener('click', function(){ setFlow('words'); });
+    // Initialize active state from hidden value (default: single).
+    setFlow((hidden && hidden.value) ? hidden.value : 'single');
+  })();
+
+  // Ensure designer state exists early so layers/background/UI always work.
+  (function bootstrapDesignerState(){
+    try {
+      // Run after current tick so DOM is fully ready.
+      setTimeout(function(){
+        if (typeof _ensureDesignerState === 'function') _ensureDesignerState();
+        // Render layer bar at least once.
+        if (typeof _renderLayerBar === 'function') _renderLayerBar(false);
+        if (typeof _applyInputsFromActiveLayer === 'function') _applyInputsFromActiveLayer();
+        if (typeof updateStikeri === 'function') updateStikeri();
+      }, 0);
+    } catch(e) {}
+  })();
+
+  // --- Sticker Designer Layers (up to 5) ---
+  // State lives in window.ST_DESIGN_STATE:
+  // {
+  //   activeKey: 'background' | 'sticker:0'...
+  //   stickerLayers: [{mode,textRaw,textFlow,text,font,color,imageUrl,isSvg,offsetX,offsetY,rotationDeg,scale}...]
+  // }
+  function _ensureDesignerState() {
+    if (window.ST_DESIGN_STATE && Array.isArray(window.ST_DESIGN_STATE.stickerLayers)) return window.ST_DESIGN_STATE;
+    const initRaw = (document.getElementById("stText") && document.getElementById("stText").value) || "";
+    const initFlow = (document.getElementById("stTextFlow") && document.getElementById("stTextFlow").value) || "single";
+    const initFont = (document.getElementById("stFont") && document.getElementById("stFont").value) || "Inter";
+    const initColor = (document.getElementById("stMainColor") && document.getElementById("stMainColor").value) || "#FFFFFF";
+    const applyRules = (typeof window.stApplyTextRules === 'function')
+      ? window.stApplyTextRules
+      : function(raw, flow){
+          const f = String(flow||'single').trim()==='words'?'words':'single';
+          let out = String(raw||'');
+          if (f==='words') out = out.replace(/\r?\n/g,' ').trim().split(/\s+/).filter(Boolean).slice(0,12).join('\n');
+          else out = out.replace(/\r?\n/g,' ').replace(/\s{2,}/g,' ').trim().slice(0,80);
+          return out;
+        };
+    window.ST_DESIGN_STATE = {
+      activeKey: "sticker:0",
+      stickerLayers: [
+        {
+          mode: "text",
+          textRaw: initRaw,
+          textFlow: (String(initFlow).trim()==='words') ? 'words' : 'single',
+          text: applyRules(initRaw, initFlow),
+          font: initFont,
+          color: initColor,
+          imageUrl: "",
+          isSvg: false,
+          offsetX: 0,
+          offsetY: 0,
+          rotationDeg: 0,
+          scale: 1
+        }
+      ]
+    };
+    return window.ST_DESIGN_STATE;
+  }
+
+  function _designerHasBackground() {
+    const bg = (document.getElementById("stBackground") && document.getElementById("stBackground").value) || "none";
+    return bg && bg !== "none";
+  }
+
+  function _maxStickerLayers() {
+    // Total max layers = 5. If background is enabled, one slot is reserved for it.
+    return _designerHasBackground() ? 4 : 5;
+  }
+
+  
+  function _applyTextFlowRules(text, flow) {
+    let t = String(text || "");
+    const f = String(flow || "single").trim();
+    if (f === "words") {
+      const words = t.replace(/\r?\n/g, " ").trim().split(/\s+/).filter(Boolean).slice(0, 12);
+      t = words.join("\n");
+    } else {
+      t = t.replace(/\r?\n/g, " ").replace(/\s{2,}/g, " ");
+      t = t.slice(0, 40);
+    }
+    const maxLines = f === "words" ? 12 : 1;
+    const lines = String(t).split(/\r?\n/).slice(0, maxLines).map(l => l.slice(0, 20));
+    return lines.join("\n");
+  }
+
+
+function syncStickerDesignerFromInputs() {
+    const st = _ensureDesignerState();
+    const active = st.activeKey || "sticker:0";
+
+    // If the active layer isn't a sticker (e.g., background), we still apply text controls to sticker layer 0
+    // so the preview responds immediately.
+    let idx = 0;
+    if (String(active).startsWith("sticker:")) {
+      idx = Number(String(active).split(":")[1] || 0) || 0;
+    }
+
+    if (!Array.isArray(st.stickerLayers) || !st.stickerLayers.length) {
+      st.stickerLayers = [{ mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1 }];
+    }
+    if (!st.stickerLayers[idx]) {
+      st.stickerLayers[idx] = { mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1 };
+    }
+
+    const layer = st.stickerLayers[idx];
+    layer.mode = (document.getElementById("designMode") && document.getElementById("designMode").value) || layer.mode || "text";
+
+    const raw = (document.getElementById("stText") && document.getElementById("stText").value) || "";
+    const flow = (document.getElementById("stTextFlow") && document.getElementById("stTextFlow").value) || "single";
+    layer.textRaw = raw;
+    layer.textFlow = (String(flow).trim() === "words") ? "words" : "single";
+
+    if (layer.mode === "text") {
+      // Do NOT mutate the textarea value; keep raw input and only transform for rendering.
+      const applyRules = (typeof window.stApplyTextRules === 'function')
+        ? window.stApplyTextRules
+        : _applyTextFlowRules;
+      layer.text = applyRules(layer.textRaw, layer.textFlow);
+    } else {
+      layer.text = "";
+    }
+
+    layer.font = (document.getElementById("stFont") && document.getElementById("stFont").value) || layer.font || "Inter";
+    layer.color = (document.getElementById("stMainColor") && document.getElementById("stMainColor").value) || layer.color || "#FFFFFF";
+
+    // Image rotation/scale (only when an uploaded SVG exists on this layer).
+    const hasUpload = (layer.mode !== 'text') && !!layer.imageUrl;
+    if (hasUpload) {
+      const rotEl = document.getElementById('stImgRotate');
+      const rotVal = rotEl ? Number(rotEl.value || 0) : 0;
+      layer.rotationDeg = isFinite(rotVal) ? rotVal : 0;
+      const scEl = document.getElementById('stImgScale');
+      const scVal = scEl ? Number(scEl.value || 100) : 100;
+      const sc = isFinite(scVal) ? scVal : 100;
+      layer.scale = Math.max(0.2, Math.min(3.0, sc / 100));
+    } else {
+      layer.rotationDeg = 0;
+      layer.scale = 1;
+    }
+
+// Persist a compact layers payload into a hidden form field (for orders).
+    try {
+      const out = {
+        stickerLayers: st.stickerLayers.map(function (l) {
+          return {
+            mode: l.mode,
+            text: l.mode === "text" ? (l.text || "") : "",
+            font: l.font || "Inter",
+            color: l.color || "#FFFFFF",
+            hasImage: !!(l.imageUrl),
+            rotationDeg: isFinite(Number(l.rotationDeg)) ? Number(l.rotationDeg) : 0
+          };
+        }),
+        hasBackground: _designerHasBackground()
+      };
+      const hidden = document.getElementById("stLayersData");
+      if (hidden) hidden.value = JSON.stringify(out);
+    } catch (e) {}
+  }
+
+
+  function _applyInputsFromActiveLayer() {
+    const st = _ensureDesignerState();
+    const active = st.activeKey || "sticker:0";
+
+    const modeWrap = document.getElementById("designerMode");
+    const textWrap = document.getElementById("stTextWrap");
+    const fileWrap = document.getElementById("stFileWrap");
+    const assetsWrap = document.getElementById("stAssetsWrap");
+    const rotateWrap = document.getElementById('stRotateWrap');
+    const scaleWrap = document.getElementById('stScaleWrap');
+    const scaleEl = document.getElementById('stImgScale');
+    const scaleValEl = document.getElementById('stImgScaleVal');
+    const rotEl = document.getElementById('stImgRotate');
+    const rotValEl = document.getElementById('stImgRotateVal');
+    const fileInput = document.getElementById("stFile");
+    const textInput = document.getElementById("stText");
+    const fontSel = document.getElementById("stFont");
+    const colorSel = document.getElementById("stMainColor");
+    const finishSel = document.getElementById("stFinish");
+
+    const editingBackground = active === "background";
+    // When editing background, hide sticker-layer controls (keeps UI disciplined).
+    if (modeWrap) modeWrap.style.display = editingBackground ? "none" : "";
+    if (textWrap) textWrap.style.display = editingBackground ? "none" : "";
+    if (fileWrap) fileWrap.style.display = editingBackground ? "none" : "";
+    // Some controls are not wrapped in <label> in the current layout. Guard against null.
+    const _setWrapVisible = function (el, visible) {
+      if (!el) return;
+      const wrap = el.closest && (el.closest(".field") || el.closest("label") || el.closest(".row") || el.parentElement);
+      if (!wrap) return;
+      wrap.style.display = visible ? "" : "none";
+    };
+    _setWrapVisible(fontSel, !editingBackground);
+    _setWrapVisible(colorSel, !editingBackground);
+    _setWrapVisible(finishSel, !editingBackground);
+
+    // Background option block is controlled by updateStikeri() based on stBackground.
+
+    if (editingBackground) {
       return;
     }
-    filtered.forEach(item=>{
-      const card = document.createElement("div");
-      card.className = "galleryItem";
-      const hasImg = item.image && String(item.image).trim();
-      card.innerHTML = `
-        ${hasImg ? `<img class="galleryImg" src="${escapeHtml(item.image)}" alt="">` : `<div class="galleryPh"></div>`}
-        <div class="galleryCap">${escapeHtml(item.title||"")}</div>
-        <div class="gallerySub">${escapeHtml(item.caption||"")}</div>
-      `;
-      grid.appendChild(card);
+
+    const idx = Number(active.split(":")[1] || 0);
+    const layer = st.stickerLayers[idx] || st.stickerLayers[0];
+    if (!layer) return;
+
+    // Mode
+    const hidden = document.getElementById("designMode");
+    if (hidden) hidden.value = layer.mode || "text";
+    if (modeWrap) {
+      modeWrap.querySelectorAll(".segBtn").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-mode") === (layer.mode || "text"));
+      });
+    }
+    // Keep the textarea showing the raw text, not the rendered text.
+    if (textInput) textInput.value = layer.textRaw ?? layer.text ?? "";
+    // Sync text-flow segmented control from the active layer.
+    try {
+      const hf = document.getElementById('stTextFlow');
+      if (hf) hf.value = (String(layer.textFlow||'single').trim()==='words') ? 'words' : 'single';
+      const sBtn = document.getElementById('stFlowSingle');
+      const wBtn = document.getElementById('stFlowWords');
+      if (sBtn) sBtn.classList.toggle('active', (hf && hf.value)==='single');
+      if (wBtn) wBtn.classList.toggle('active', (hf && hf.value)==='words');
+    } catch(e) {}
+    if (fontSel) fontSel.value = layer.font || "Inter";
+    if (colorSel) colorSel.value = layer.color || (colorSel.value || "#FFFFFF");
+
+    // Show correct input (text vs upload vs assets)
+    const m = (layer.mode || 'text');
+    const isText = m === 'text';
+    const isUpload = m === 'upload';
+    const isAssets = m === 'assets';
+    if (textWrap) textWrap.style.display = isText ? '' : 'none';
+    if (fileWrap) fileWrap.style.display = isUpload ? '' : 'none';
+    if (assetsWrap) assetsWrap.style.display = isAssets ? '' : 'none';
+
+    const hasUpload = (!isText) && !!(layer && layer.imageUrl);
+    if (rotateWrap) rotateWrap.style.display = hasUpload ? '' : 'none';
+    if (scaleWrap) scaleWrap.style.display = hasUpload ? '' : 'none';
+    if (textInput) textInput.required = isText;
+    if (fileInput) fileInput.required = isUpload;
+
+    // Rotation/Scale UI sync
+    if (hasUpload) {
+      const v = isFinite(Number(layer.rotationDeg)) ? Number(layer.rotationDeg) : 0;
+      if (rotEl) rotEl.value = String(v);
+      if (rotValEl) rotValEl.textContent = String(v) + "°";
+    }
+
+    // Hint about existing upload (can't re-populate file input)
+    const fileHint = document.getElementById("stFileHint");
+    if (fileHint) {
+      if (isUpload && layer.imageUrl) fileHint.textContent = "This layer has an uploaded file.";
+      else if (isAssets && layer.imageUrl) fileHint.textContent = "This layer uses a library asset.";
+      else if (isUpload) fileHint.textContent = "High resolution recommended. Low quality files may be blocked.";
+    }
+  }
+
+  function _renderLayerBar(animate) {
+    const st = _ensureDesignerState();
+    const wrap = document.getElementById("stLayerBtns");
+    if (!wrap) return;
+
+    // FLIP animation support: capture previous positions before rerender.
+    let prev = null;
+    if (animate) {
+      prev = {};
+      wrap.querySelectorAll(".layerBtn").forEach(function (b) {
+        const k = b.getAttribute("data-key") || "";
+        if (!k) return;
+        prev[k] = b.getBoundingClientRect();
+      });
+    }
+
+    wrap.innerHTML = "";
+
+    const hasBg = _designerHasBackground();
+    if (hasBg) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "layerBtn" + (st.activeKey === "background" ? " active" : "");
+      b.setAttribute("data-key", "background");
+      b.textContent = "Background";
+      wrap.appendChild(b);
+    }
+
+    st.stickerLayers.forEach(function (layer, idx) {
+      const key = "sticker:" + idx;
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "layerBtn" + (st.activeKey === key ? " active" : "");
+      // Drag reordering is enabled via a handle (not the whole button).
+      b.draggable = false;
+      b.setAttribute("data-index", String(idx));
+      // Only show a small meta hint when this layer is an image upload.
+      const meta = (layer && layer.imageUrl) ? 'SVG' : '';
+
+      const handle = document.createElement("span");
+      handle.className = "layerHandle";
+      handle.setAttribute("draggable", "true");
+      handle.setAttribute("title", "Drag to reorder");
+      handle.setAttribute("aria-label", "Drag to reorder");
+      handle.innerHTML = "<span class=\"dots\" aria-hidden=\"true\">⋮⋮</span>";
+
+      const label = document.createElement("span");
+      label.className = "layerLabel";
+      label.textContent = "Layer " + (idx + 1);
+
+      b.appendChild(handle);
+      b.appendChild(label);
+      if (meta) {
+        const m = document.createElement("span");
+        m.className = "layerMeta";
+        m.textContent = meta;
+        b.appendChild(m);
+      }
+      b.setAttribute("data-key", key);
+      wrap.appendChild(b);
     });
-  };
 
-  tagSel.addEventListener("change", render);
-  render();
-}
+    const addBtn = document.getElementById("stAddLayer");
+    const remBtn = document.getElementById("stRemoveLayer");
+    const maxL = _maxStickerLayers();
+    if (addBtn) addBtn.disabled = st.stickerLayers.length >= maxL;
+    if (remBtn) {
+      const activeSticker = st.activeKey && st.activeKey.startsWith("sticker:");
+      remBtn.disabled = !activeSticker || st.stickerLayers.length <= 1;
+    }
 
-// Copy helpers
-async function copyText(text){
-  try{ await navigator.clipboard.writeText(text); return true; }
-  catch{ return false; }
-}
-function buildNadpisiSummary(){
-  const text = $("npText")?.value || "";
-  const w = $("npWidth")?.value || "";
-  const h = $("npHeight")?.value || "";
-  const font = $("npFont")?.value || "";
-  const main = $("npMainColor")?.value || "";
-  const extras = getExtraColors($("npExtraColorsHidden"));
-  const note = document.querySelector('#formNadpisi textarea[name="note"]')?.value || "";
-  const price = $("npPrice")?.textContent || "";
-  return `BG STICKERS • НАДПИСИ ПО ПОРЪЧКА
-Текст: ${text}
-Размер: ${w}см ${h ? `/ ${h}см` : ""}
-Шрифт: ${font}
-Основен цвят: ${main}
-Доп. цветове: ${extras.join(", ") || "няма"}
-Бележка: ${note || "-"}
-Цена (ориент.): ${price}`;
-}
-function buildStikeriSummary(){
-  const text = $("stText")?.value || "";
-  const w = $("stWidth")?.value || "";
-  const h = $("stHeight")?.value || "";
-  const font = $("stFont")?.value || "";
-  const main = $("stMainColor")?.value || "";
-  const extras = getExtraColors($("stExtraColorsHidden"));
-  const desc = document.querySelector('#formStikeri textarea[name="description"]')?.value || "";
-  const price = $("stPrice")?.textContent || "";
-  return `BG STICKERS • СТИКЕРИ ПО ПОРЪЧКА
-Текст: ${text}
-Размер: ${w}см ${h ? `/ ${h}см` : ""}
-Шрифт: ${font}
-Основен цвят: ${main}
-Доп. цветове: ${extras.join(", ") || "няма"}
-Описание: ${desc || "-"}
-Цена (ориент.): ${price}`;
-}
-
-// Optional submit
-async function postForm(formEl, hintEl, extra){
-  if(!CONFIG.formEndpoint){
-    hintEl.textContent = `⚠️ Няма formEndpoint. Добави endpoint в app.js. Междувременно: ${CONFIG.instagram} / ${CONFIG.contactEmail}.`;
-    return;
+    // Apply FLIP animation after rerender.
+    if (animate && prev) {
+      const next = {};
+      wrap.querySelectorAll(".layerBtn").forEach(function (b) {
+        const k = b.getAttribute("data-key") || "";
+        if (!k) return;
+        next[k] = b.getBoundingClientRect();
+      });
+      wrap.querySelectorAll(".layerBtn").forEach(function (b) {
+        const k = b.getAttribute("data-key") || "";
+        if (!k || !prev[k] || !next[k]) return;
+        const dx = prev[k].left - next[k].left;
+        const dy = prev[k].top - next[k].top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+        b.style.transform = "translate(" + dx + "px," + dy + "px)";
+        b.style.transition = "transform 0s";
+        b.getBoundingClientRect();
+        requestAnimationFrame(function () {
+          b.style.transition = "transform 180ms cubic-bezier(.2,.8,.2,1)";
+          b.style.transform = "translate(0px,0px)";
+        });
+      });
+    }
   }
-  hintEl.textContent = "Изпращане...";
-  const fd = new FormData(formEl);
-  Object.entries(extra || {}).forEach(([k,v]) => fd.append(k, v));
-  try{
-    const res = await fetch(CONFIG.formEndpoint, { method:"POST", body:fd, headers:{ "Accept":"application/json" }});
-    hintEl.textContent = res.ok ? "✅ Заявката е изпратена!" : "❌ Грешка при изпращане.";
-    if(res.ok) formEl.reset();
-  }catch{
-    hintEl.textContent = "❌ Няма връзка / endpoint проблем.";
-  }
-}
 
-window.addEventListener("DOMContentLoaded", async ()=>{
-  const colors = await loadColors();
-  renderColorDock(colors);
-  fillColorSelect($("npMainColor"), colors);
-  fillColorSelect($("stMainColor"), colors);
-  fillColorSelect($("avtoColor"), colors);
+  (function initLayerBar() {
+    const st = _ensureDesignerState();
+    const bar = document.getElementById("stLayerBar");
+    const addBtn = document.getElementById("stAddLayer");
+    const remBtn = document.getElementById("stRemoveLayer");
+    if (!bar) return;
 
-  renderExtraColors($("npExtraColors"), $("npExtraColorsHidden"), colors, null);
-  renderExtraColors($("stExtraColors"), $("stExtraColorsHidden"), colors, $("stExtraColorsSummary"));
+    // --- Drag-to-reorder sticker layers (background is fixed) ---
+    let dragFromIndex = null;
+    const btnWrap = document.getElementById("stLayerBtns");
+    if (btnWrap) {
+      btnWrap.addEventListener("dragstart", function (e) {
+        // Dragging starts ONLY from the handle.
+        const handle = e.target && e.target.closest && e.target.closest(".layerHandle");
+        const btn = handle && handle.closest && handle.closest(".layerBtn");
+        if (!btn) return;
+        const key = btn.getAttribute("data-key") || "";
+        if (key === "background") return;
+        const idx = Number(btn.getAttribute("data-index"));
+        if (!isFinite(idx)) return;
+        dragFromIndex = idx;
+        try {
+          e.dataTransfer.effectAllowed = "move";
+          e.dataTransfer.setData("text/plain", String(idx));
+        } catch (_) {}
+        btn.classList.add("dragging");
+      });
 
-  initTabs();
-  renderNadpisiPopular();
-  setNadpisiMode("custom");
-  initBrandDropdown();
-  initGallery();
-  initFontUploads();
-  // Load any previously uploaded fonts for this browser/device.
-  await bootstrapSavedFonts();
+      btnWrap.addEventListener("dragend", function (e) {
+        const btn = e.target && e.target.closest && e.target.closest(".layerBtn");
+        if (btn) btn.classList.remove("dragging");
+        dragFromIndex = null;
+        btnWrap.querySelectorAll(".layerBtn").forEach(function (b) {
+          b.classList.remove("dragOver");
+        });
+      });
 
-  ["npText","npWidth","npFont","npMainColor"].forEach(id=>{
-    $(id)?.addEventListener("input", updateNadpisi);
-    $(id)?.addEventListener("change", updateNadpisi);
-  });
-  $("npExtraColors")?.addEventListener("change", updateNadpisi);
+      btnWrap.addEventListener("dragover", function (e) {
+        const btn = e.target && e.target.closest && e.target.closest(".layerBtn");
+        if (!btn) return;
+        const key = btn.getAttribute("data-key") || "";
+        if (key === "background") return;
+        e.preventDefault();
+        btnWrap.querySelectorAll(".layerBtn").forEach(function (b) {
+          b.classList.remove("dragOver");
+        });
+        btn.classList.add("dragOver");
+      });
 
-  ["stText","stWidth","stFont","stMainColor"].forEach(id=>{
-    $(id)?.addEventListener("input", updateStikeri);
-    $(id)?.addEventListener("change", updateStikeri);
-  });
-  $("stExtraColors")?.addEventListener("change", updateStikeri);
+      btnWrap.addEventListener("drop", function (e) {
+        const btn = e.target && e.target.closest && e.target.closest(".layerBtn");
+        if (!btn) return;
+        const key = btn.getAttribute("data-key") || "";
+        if (key === "background") return;
+        e.preventDefault();
 
-  const f = $("stFile"), img = $("stThumb");
-  if(f && img){
-    f.addEventListener("change", ()=>{
-      const file = f.files && f.files[0];
-      if(!file){ img.style.display="none"; img.src=""; return; }
-      img.src = URL.createObjectURL(file);
-      img.style.display="block";
+        const st = _ensureDesignerState();
+        let from = dragFromIndex;
+        if (!isFinite(from)) {
+          const v = Number((e.dataTransfer && e.dataTransfer.getData("text/plain")) || NaN);
+          if (isFinite(v)) from = v;
+        }
+        const to = Number(btn.getAttribute("data-index"));
+        if (!isFinite(from) || !isFinite(to) || from === to) return;
+        if (!st.stickerLayers[from] || !st.stickerLayers[to]) return;
+
+        const moved = st.stickerLayers.splice(from, 1)[0];
+        st.stickerLayers.splice(to, 0, moved);
+
+        // Keep the active sticker layer pointing to the same logical layer.
+        if (st.activeKey && st.activeKey.startsWith("sticker:")) {
+          const activeIdx = Number(st.activeKey.split(":")[1] || 0);
+          let newActive = activeIdx;
+          if (activeIdx === from) newActive = to;
+          else if (from < activeIdx && activeIdx <= to) newActive = activeIdx - 1;
+          else if (to <= activeIdx && activeIdx < from) newActive = activeIdx + 1;
+          st.activeKey = "sticker:" + Math.max(0, Math.min(st.stickerLayers.length - 1, newActive));
+        }
+
+        _renderLayerBar(true);
+        _applyInputsFromActiveLayer();
+        syncStickerDesignerFromInputs();
+        updateStikeri();
+      });
+    }
+
+    bar.addEventListener("click", function (e) {
+      const btn = e.target && e.target.closest && e.target.closest(".layerBtn");
+      if (!btn) return;
+      // Clicking the drag handle shouldn't switch layers.
+      if (e.target && e.target.closest && e.target.closest(".layerHandle")) return;
+      syncStickerDesignerFromInputs();
+      st.activeKey = btn.getAttribute("data-key") || "sticker:0";
+      _renderLayerBar(false);
+      _applyInputsFromActiveLayer();
+      updateStikeri();
+    });
+
+    if (addBtn) {
+      addBtn.addEventListener("click", function () {
+        syncStickerDesignerFromInputs();
+        const maxL = _maxStickerLayers();
+        if (st.stickerLayers.length >= maxL) return;
+        st.stickerLayers.push({
+          mode: "text",
+          textRaw: "",
+          textFlow: (document.getElementById('stTextFlow') && document.getElementById('stTextFlow').value) || 'single',
+          text: "",
+          font: (document.getElementById("stFont") && document.getElementById("stFont").value) || "Inter",
+          color: (document.getElementById("stMainColor") && document.getElementById("stMainColor").value) || "#FFFFFF",
+          imageUrl: "",
+          isSvg: false,
+          offsetX: 0,
+          offsetY: 0,
+          rotationDeg: 0,
+          scale: 1
+        });
+        st.activeKey = "sticker:" + (st.stickerLayers.length - 1);
+        _renderLayerBar(false);
+        _applyInputsFromActiveLayer();
+        updateStikeri();
+      });
+    }
+
+    if (remBtn) {
+      remBtn.addEventListener("click", function () {
+        syncStickerDesignerFromInputs();
+        const key = st.activeKey || "sticker:0";
+        if (!key.startsWith("sticker:")) return;
+        if (st.stickerLayers.length <= 1) return;
+        const idx = Number(key.split(":")[1] || 0);
+        const layer = st.stickerLayers[idx];
+        try { if (layer && layer.imageUrl && layer.imageUrl.startsWith("blob:")) URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+        st.stickerLayers.splice(idx, 1);
+        st.activeKey = "sticker:" + Math.max(0, idx - 1);
+        _renderLayerBar(true);
+        _applyInputsFromActiveLayer();
+        updateStikeri();
+      });
+    }
+
+    // When background selection changes, make background layer reachable and keep editing sane.
+    const bgSel = document.getElementById("stBackground");
+    if (bgSel) {
+      bgSel.addEventListener("change", function () {
+        syncStickerDesignerFromInputs();
+        // If background removed, ensure active is sticker.
+        if (!_designerHasBackground() && st.activeKey === "background") st.activeKey = "sticker:0";
+        _renderLayerBar(true);
+        _applyInputsFromActiveLayer();
+        updateStikeri();
+      });
+    }
+
+    _renderLayerBar(false);
+    _applyInputsFromActiveLayer();
+  })();
+
+  // Designer mode: Text vs Upload (clean buttons)
+  
+  // Designer mode: Text vs Upload vs Assets (clean buttons)
+  (function initDesignerMode() {
+    const wrap = document.getElementById("designerMode");
+    const hidden = document.getElementById("designMode");
+    const textWrap = document.getElementById("stTextWrap");
+    const fileWrap = document.getElementById("stFileWrap");
+    const assetsWrap = document.getElementById("stAssetsWrap");
+    const fileInput = document.getElementById("stFile");
+    const textInput = document.getElementById("stText");
+    if (!wrap || !hidden || !textWrap || !fileWrap) return;
+
+    function setMode(mode) {
+      const m = (mode === 'assets' || mode === 'upload' || mode === 'text') ? mode : 'text';
+      const isText = m === "text";
+      const isUpload = m === 'upload';
+      const isAssets = m === 'assets';
+
+      hidden.value = m;
+      // Persist mode into active sticker layer.
+      const st = _ensureDesignerState();
+      if (st.activeKey && st.activeKey.startsWith("sticker:")) {
+        const idx = Number(st.activeKey.split(":")[1] || 0);
+        if (st.stickerLayers[idx]) st.stickerLayers[idx].mode = m;
+      }
+
+      textWrap.style.display = isText ? "" : "none";
+      fileWrap.style.display = isUpload ? "" : "none";
+      if (assetsWrap) assetsWrap.style.display = isAssets ? "" : "none";
+
+      // Required fields:
+      if (textInput) textInput.required = isText;
+      if (fileInput) fileInput.required = isUpload;
+
+      wrap.querySelectorAll(".segBtn").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-mode") === m);
+      });
+      updateStikeri();
+    }
+
+    wrap.addEventListener("click", function (e) {
+      const btn = e.target && e.target.closest && e.target.closest(".segBtn");
+      if (!btn) return;
+      setMode(btn.getAttribute("data-mode") || "text");
+    });
+
+    // Default.
+    setMode("text");
+  })();
+
+
+
+  // Assets library (curated SVGs)
+  (function initAssetsLibrary(){
+    const grid = document.getElementById('stAssetsGrid');
+    const searchEl = document.getElementById('stAssetsSearch');
+    const hintEl = document.getElementById('stAssetsHint');
+    if (!grid) return;
+
+    let catalog = [];
+
+    function _getHashRouteAndQuery(){
+      const raw = String(location.hash || '').replace(/^#/, '');
+      const parts = raw.split('?');
+      const route = (parts[0] || '').trim();
+      const query = (parts[1] || '').trim();
+      const params = {};
+      if (query) {
+        query.split('&').forEach(function(p){
+          const kv = p.split('=');
+          const k = decodeURIComponent((kv[0]||'').trim());
+          const v = decodeURIComponent((kv[1]||'').trim());
+          if (k) params[k] = v;
+        });
+      }
+      return { route: route, params: params };
+    }
+
+    function _clearHashQueryKeepRoute(route){
+      try {
+        const clean = '#' + (route || 'design');
+        if (location.hash === clean) return;
+        history.replaceState(null, '', location.pathname + location.search + clean);
+      } catch(e){
+        location.hash = '#' + (route || 'design');
+      }
+    }
+
+    function addAssetToDesigner(item){
+      if (!item) return;
+      try {
+        syncStickerDesignerFromInputs();
+        const st = _ensureDesignerState();
+        const maxL = _maxStickerLayers();
+        if (st.stickerLayers.length >= maxL) return;
+
+        st.stickerLayers.push({
+          mode: 'assets',
+          assetId: item.id || '',
+          textRaw: '',
+          textFlow: (document.getElementById('stTextFlow') && document.getElementById('stTextFlow').value) || 'single',
+          text: '',
+          font: (document.getElementById('stFont') && document.getElementById('stFont').value) || 'Inter',
+          color: (document.getElementById('stMainColor') && document.getElementById('stMainColor').value) || '#FFFFFF',
+          imageUrl: item.svg,
+          isSvg: true,
+          offsetX: 0,
+          offsetY: 0,
+          rotationDeg: 0,
+          scale: 1
+        });
+
+        st.activeKey = 'sticker:' + (st.stickerLayers.length - 1);
+
+        // Switch UI to Assets mode for this layer.
+        const hidden = document.getElementById('designMode');
+        if (hidden) hidden.value = 'assets';
+        const modeWrap = document.getElementById('designerMode');
+        if (modeWrap) {
+          modeWrap.querySelectorAll('.segBtn').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-mode') === 'assets');
+          });
+        }
+
+        _renderLayerBar(false);
+        _applyInputsFromActiveLayer();
+        updateStikeri();
+      } catch(e) {}
+    }
+
+    function consumeAssetFromHashOnce(){
+      try {
+        const h = _getHashRouteAndQuery();
+        if (h.route !== 'design') return;
+        const assetId = h.params && h.params.asset ? String(h.params.asset).trim() : '';
+        if (!assetId) return;
+        const item = (Array.isArray(catalog) ? catalog : []).find(function(it){ return String(it.id) === assetId; });
+        if (!item) return;
+        addAssetToDesigner(item);
+        _clearHashQueryKeepRoute('design');
+      } catch(e) {}
+    }
+
+    function render(list){
+      grid.innerHTML = '';
+      if (!Array.isArray(list) || !list.length){
+        if (hintEl) hintEl.textContent = 'No assets found.';
+        return;
+      }
+      if (hintEl) hintEl.textContent = '';
+
+      list.forEach(function(item){
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'assetBtn';
+        btn.setAttribute('data-svg', item.svg);
+        btn.setAttribute('title', item.name || 'Asset');
+
+        const img = document.createElement('img');
+        img.alt = item.name || 'asset';
+        img.src = item.svg;
+        btn.appendChild(img);
+
+        const name = document.createElement('div');
+        name.className = 'assetName';
+        name.textContent = item.name || item.id || 'Asset';
+        btn.appendChild(name);
+
+        btn.addEventListener('click', function(){
+          addAssetToDesigner(item);
+        });
+
+        grid.appendChild(btn);
+      });
+    }
+
+    function applyFilter(){
+      const q = (searchEl && searchEl.value || '').trim().toLowerCase();
+      if (!q) return render(catalog);
+      const filtered = catalog.filter(function(it){
+        const hay = [it.name, it.id, (it.tags||[]).join(' ')].join(' ').toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+      render(filtered);
+    }
+
+    if (searchEl) searchEl.addEventListener('input', applyFilter);
+
+    fetch('assets/catalog.json')
+      .then(r => r.ok ? r.json() : [])
+      .then(function(data){
+        catalog = Array.isArray(data) ? data : [];
+        render(catalog);
+        // If navigated here with #design?asset=..., auto-insert it once.
+        consumeAssetFromHashOnce();
+      })
+      .catch(function(){
+        catalog = [];
+        render(catalog);
+      });
+
+    // React when user clicks "Use in designer" on the Assets page.
+    window.addEventListener('hashchange', consumeAssetFromHashOnce);
+  })();
+
+
+  // Assets page (website page that links into the designer)
+  (function initAssetsPage(){
+    const grid = document.getElementById('assetsPageGrid');
+    const searchEl = document.getElementById('assetsPageSearch');
+    const hintEl = document.getElementById('assetsPageHint');
+    if (!grid) return;
+
+    let catalog = [];
+
+    function render(list){
+      grid.innerHTML = '';
+      if (!Array.isArray(list) || !list.length){
+        if (hintEl) hintEl.textContent = 'No assets found.';
+        return;
+      }
+      if (hintEl) hintEl.textContent = '';
+      list.forEach(function(item){
+        const card = document.createElement('div');
+        card.className = 'assetCard';
+
+        const top = document.createElement('div');
+        top.className = 'assetCardTop';
+
+        const img = document.createElement('img');
+        img.alt = item.name || 'asset';
+        img.src = item.svg;
+        top.appendChild(img);
+
+        const nm = document.createElement('div');
+        nm.className = 'assetCardName';
+        nm.textContent = item.name || item.id || 'Asset';
+        top.appendChild(nm);
+
+        card.appendChild(top);
+
+        const actions = document.createElement('div');
+        actions.className = 'assetCardActions';
+
+        const use = document.createElement('a');
+        use.href = '#design?asset=' + encodeURIComponent(item.id || '');
+        use.textContent = 'Use in designer';
+        actions.appendChild(use);
+
+        const dl = document.createElement('a');
+        dl.href = item.svg;
+        dl.setAttribute('download', (item.id || 'asset') + '.svg');
+        dl.textContent = 'Download';
+        actions.appendChild(dl);
+
+        card.appendChild(actions);
+
+        grid.appendChild(card);
+      });
+    }
+
+    function applyFilter(){
+      const q = (searchEl && searchEl.value || '').trim().toLowerCase();
+      if (!q) return render(catalog);
+      const filtered = catalog.filter(function(it){
+        const hay = [it.name, it.id, (it.tags||[]).join(' ')].join(' ').toLowerCase();
+        return hay.indexOf(q) !== -1;
+      });
+      render(filtered);
+    }
+
+    if (searchEl) searchEl.addEventListener('input', applyFilter);
+
+    fetch('assets/catalog.json')
+      .then(r => r.ok ? r.json() : [])
+      .then(function(data){
+        catalog = Array.isArray(data) ? data : [];
+        render(catalog);
+      })
+      .catch(function(){
+        catalog = [];
+        render(catalog);
+      });
+  })();
+
+
+  // Quantity presets + manual input
+  (function initQtyPresets() {
+    const presets = document.getElementById("stQtyPresets");
+    const qtyInput = document.getElementById("stQty");
+    if (!presets || !qtyInput) return;
+    presets.addEventListener("click", function (e) {
+      const b = e.target && e.target.closest && e.target.closest(".qtyBtn");
+      if (!b) return;
+      const q = Number(b.getAttribute("data-qty") || 5);
+      qtyInput.value = String(q);
+      presets.querySelectorAll(".qtyBtn").forEach(function (x) {
+        x.classList.toggle("active", x === b);
+      });
+      updateStikeri();
+    });
+    qtyInput.addEventListener("input", function () {
+      const v = Number(qtyInput.value || 0);
+      presets.querySelectorAll(".qtyBtn").forEach(function (b) {
+        b.classList.toggle("active", Number(b.getAttribute("data-qty")) === v);
+      });
+      updateStikeri();
+    });
+  })();
+
+  const stFile = document.getElementById("stFile");
+  if (stFile) {
+    stFile.addEventListener("change", function () {
+      const st = _ensureDesignerState();
+      const active = st.activeKey || "sticker:0";
+      if (!active.startsWith("sticker:")) return;
+      const idx = Number(active.split(":")[1] || 0);
+      const layer = st.stickerLayers[idx];
+      if (!layer) return;
+
+      const file = stFile.files && stFile.files[0];
+      if (!file) {
+        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
+          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+        }
+        layer.imageUrl = "";
+        layer.isSvg = false;
+        const sizeHint = document.getElementById("stSizeHint");
+        const wEl = document.getElementById("stWidth");
+        if (wEl) wEl.max = "60";
+        if (sizeHint) sizeHint.textContent = "";
+        return;
+      }
+      // Guardrail: keep uploads disciplined. For now allow SVG only (scales cleanly and avoids random raster quality).
+      const isSvgByType = file.type === "image/svg+xml";
+      const isSvgByName = /\.svg$/i.test(file.name || "");
+      const isSvg = isSvgByType || isSvgByName;
+      if (!isSvg) {
+        const hint = document.getElementById("stFileHint");
+        if (hint) {
+          hint.textContent = "Only SVG files are allowed for uploads.";
+          hint.classList.add('errorText');
+        }
+        stFile.value = "";
+        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
+          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+        }
+        layer.imageUrl = "";
+        layer.isSvg = false;
+        updateStikeri();
+        return;
+      }
+
+      // Ensure the layer (and UI) is in upload mode so the preview renders the image.
+      try {
+        layer.mode = 'upload';
+        // Keep this layer active so the user immediately sees/edits it.
+        st.activeKey = 'sticker:' + idx;
+        const hiddenMode = document.getElementById('designMode');
+        if (hiddenMode) hiddenMode.value = 'upload';
+        const modeWrap = document.getElementById('designerMode');
+        if (modeWrap) {
+          modeWrap.querySelectorAll('.segBtn').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-mode') === 'upload');
+          });
+        }
+      } catch(e){}
+
+      // Basic quality guardrail + max size rules.
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = function () {
+        // For SVG, Image() often reports 0x0; we accept and render it anyway.
+        const ok = true;
+        const hint = document.getElementById("stFileHint");
+        if (!ok) {
+          if (hint) {
+            hint.textContent = "This file is too small for clean printing. Please upload a higher-resolution image.";
+            hint.classList.add('errorText');
+          }
+          stFile.value = "";
+          if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
+            try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+          }
+          layer.imageUrl = "";
+          layer.isSvg = false;
+          updateStikeri();
+          return;
+        }
+        // SVG uploads can be larger; keep width max relaxed.
+        const sizeHint = document.getElementById("stSizeHint");
+        const wEl = document.getElementById("stWidth");
+        if (wEl) wEl.max = "60";
+        if (sizeHint) sizeHint.textContent = "SVG uploads scale cleanly and can be larger than A4.";
+
+        if (hint) {
+          hint.textContent = "Looks good.";
+          hint.classList.remove('errorText');
+        }
+        // Save into current layer
+        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
+          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+        }
+        layer.imageUrl = url;
+        layer.isSvg = true;
+        // SVG artwork is usually best previewed on white.
+        // Force White BG ON when an SVG is uploaded (user can toggle off).
+        window.__ST_PREVIEW_WHITE_BG_PREF__ = true;
+        try {
+          const box = document.getElementById('stPreviewBox');
+          if (box) box.classList.add('whiteBgOn');
+          const btn = document.getElementById('stWhiteBgToggle');
+          if (btn) btn.classList.add('active');
+        } catch(e) {}
+
+        // Default rotation for newly uploaded artwork.
+        if (!isFinite(Number(layer.rotationDeg))) layer.rotationDeg = 0;
+        syncStickerDesignerFromInputs();
+        updateStikeri();
+        _renderLayerBar(false);
+      };
+      img.onerror = function () {
+        const hint = document.getElementById("stFileHint");
+        if (hint) {
+          hint.textContent = "Could not read this file. Please try another image.";
+          hint.classList.add('errorText');
+        }
+        stFile.value = "";
+        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
+          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
+        }
+        layer.imageUrl = "";
+        layer.isSvg = false;
+        updateStikeri();
+      };
+      img.src = url;
     });
   }
 
-  $("npBackToCustomBtn")?.addEventListener("click", ()=> setNadpisiMode("custom"));
+  const backToCustom = document.getElementById("npBackToCustomBtn");
+  if (backToCustom) {
+    backToCustom.addEventListener("click", function () {
+      _safe('setNadpisiMode', () => setNadpisiMode("custom"));
+    });
+  }
 
-  $("npCopy")?.addEventListener("click", async ()=>{
-    const ok = await copyText(buildNadpisiSummary());
-    $("npSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
-  });
-  $("stCopy")?.addEventListener("click", async ()=>{
-    const ok = await copyText(buildStikeriSummary());
-    $("stSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
-  });
-  $("avCopy")?.addEventListener("click", async ()=>{
-    const ok = await copyText("BG STICKERS • АВТО ПО ПОРЪЧКА (виж полетата)");
-    $("avtoSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
-  });
-  $("prCopy")?.addEventListener("click", async ()=>{
-    const ok = await copyText("BG STICKERS • ПРИНТ СТИКЕР (виж полетата)");
-    $("printSubmitHint").textContent = ok ? "📋 Копирано!" : "❌ Не успях да копирам.";
-  });
+  const t = window.t || function(s) { return s; };
+  const npCopy = document.getElementById("npCopy");
+  if (npCopy) {
+    npCopy.addEventListener("click", async function () {
+      const ok = await copyText(buildNadpisiSummary());
+      const hint = document.getElementById("npSubmitHint");
+      if (hint) hint.textContent = ok ? (t("common.copied") || "📋 Copied!") : (t("common.copyError") || "❌ Could not copy.");
+    });
+  }
+  const stCopy = document.getElementById("stCopy");
+  if (stCopy) {
+    stCopy.addEventListener("click", async function () {
+      const ok = await copyText(buildStikeriSummary());
+      const hint = document.getElementById("stSubmitHint");
+      if (hint) hint.textContent = ok ? (t("common.copied") || "📋 Copied!") : (t("common.copyError") || "❌ Could not copy.");
+    });
+  }
+  const avCopy = document.getElementById("avCopy");
+  if (avCopy) {
+    avCopy.addEventListener("click", async function () {
+      const ok = await copyText(t("summary.avto") || "BG STICKERS • CUSTOM AUTO ORDER (see fields)");
+      const hint = document.getElementById("avtoSubmitHint");
+      if (hint) hint.textContent = ok ? (t("common.copied") || "📋 Copied!") : (t("common.copyError") || "❌ Could not copy.");
+    });
+  }
+  const prCopy = document.getElementById("prCopy");
+  if (prCopy) {
+    prCopy.addEventListener("click", async function () {
+      const ok = await copyText(t("summary.print") || "BG STICKERS • PRINT STICKER ORDER (see fields)");
+      const hint = document.getElementById("printSubmitHint");
+      if (hint) hint.textContent = ok ? (t("common.copied") || "📋 Copied!") : (t("common.copyError") || "❌ Could not copy.");
+    });
+  }
 
-  $("formNadpisi")?.addEventListener("submit", (e)=>{
-    e.preventDefault();
-    const type = NP_MODE === "popular" ? "nadpisi_popular" : "nadpisi_custom";
-    postForm($("formNadpisi"), $("npSubmitHint"), { type });
-  });
-  $("formStikeri")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formStikeri"), $("stSubmitHint"), { type:"stikeri_custom" }); });
-  $("formAvtoCustom")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formAvtoCustom"), $("avtoSubmitHint"), { type:"avto_custom" }); });
-  $("formPrint")?.addEventListener("submit", (e)=>{ e.preventDefault(); postForm($("formPrint"), $("printSubmitHint"), { type:"print_sticker" }); });
+  const formNadpisi = document.getElementById("formNadpisi");
+  if (formNadpisi) {
+    formNadpisi.addEventListener("submit", function (e) {
+      e.preventDefault();
+      const type = window.NP_MODE === "popular" ? "nadpisi_popular" : "nadpisi_custom";
+      postForm(
+        formNadpisi,
+        document.getElementById("npSubmitHint"),
+        { type: type }
+      );
+    });
+  }
 
-  const onRoute = () => setActivePage(currentRoute());
-  window.addEventListener("hashchange", onRoute);
-  onRoute();
+  const formStikeri = document.getElementById("formStikeri");
+  if (formStikeri) {
+    formStikeri.addEventListener("submit", function (e) {
+      e.preventDefault();
+      postForm(
+        formStikeri,
+        document.getElementById("stSubmitHint"),
+        { type: "stikeri_custom" }
+      );
+    });
+  }
 
+  const formAvto = document.getElementById("formAvtoCustom");
+  if (formAvto) {
+    formAvto.addEventListener("submit", function (e) {
+      e.preventDefault();
+      postForm(
+        formAvto,
+        document.getElementById("avtoSubmitHint"),
+        { type: "avto_custom" }
+      );
+    });
+  }
+
+  const formPrint = document.getElementById("formPrint");
+  if (formPrint) {
+    formPrint.addEventListener("submit", function (e) {
+      e.preventDefault();
+      postForm(
+        formPrint,
+        document.getElementById("printSubmitHint"),
+        { type: "print_sticker" }
+      );
+    });
+  }
+
+  // Reset the sticker designer to a clean start.
+  (function initDesignerReset(){
+    const btn = document.getElementById('stResetDesign');
+    if (!btn) return;
+    btn.addEventListener('click', function(){
+      try{
+        // Reset form inputs
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = String(v); };
+        setVal('designMode', 'text');
+        const modeWrap = document.getElementById('designerMode');
+        if (modeWrap) modeWrap.querySelectorAll('.segBtn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-mode')==='text'));
+
+        setVal('stText', '');
+        setVal('stTextFlow', 'single');
+        const flowSingle = document.getElementById('stFlowSingle');
+        const flowWords = document.getElementById('stFlowWords');
+        if (flowSingle) flowSingle.classList.add('active');
+        if (flowWords) flowWords.classList.remove('active');
+
+        setVal('stWidth', 10);
+        setVal('stQty', 50);
+        setVal('stFinish', 'matte');
+        setVal('stBackground', 'none');
+        setVal('stBgScaleX', 110);
+        setVal('stBgScaleY', 110);
+        setVal('stBgFinish', 'matte');
+
+        // Reset selects to first option when appropriate
+        const stFont = document.getElementById('stFont');
+        if (stFont) stFont.value = stFont.options && stFont.options.length ? (stFont.querySelector('option[selected]')?.value || stFont.options[0].value) : 'Inter';
+        const stColor = document.getElementById('stMainColor');
+        // Default text color should be white (keeps dark preview). Do not pick the first option because
+        // some palettes put black first, which would force a white preview background.
+        if (stColor) stColor.value = '#FFFFFF';
+        const stBgColor = document.getElementById('stBgColor');
+        if (stBgColor && stBgColor.options && stBgColor.options.length) stBgColor.value = stBgColor.options[0].value;
+
+        // Clear upload
+        const stFile = document.getElementById('stFile');
+        if (stFile) stFile.value = '';
+        const hint = document.getElementById('stFileHint');
+        if (hint){ hint.textContent = ''; hint.classList.remove('errorText'); }
+
+        // Reset internal state and revoke blobs
+        if (window.ST_DESIGN_STATE && Array.isArray(window.ST_DESIGN_STATE.stickerLayers)){
+          window.ST_DESIGN_STATE.stickerLayers.forEach(function(l){
+            if (l && l.imageUrl && String(l.imageUrl).startsWith('blob:')){ try{ URL.revokeObjectURL(l.imageUrl); }catch(e){} }
+          });
+        }
+        window.ST_DESIGN_STATE = null;
+        _ensureDesignerState();
+        _renderLayerBar(false);
+        syncStickerDesignerFromInputs();
+        updateStikeri();
+
+        // Reset canvas view (pan/zoom)
+        if (window.__ST_CANVAS__ && typeof window.__ST_CANVAS__.resetView === 'function') window.__ST_CANVAS__.resetView();
+      }catch(e){
+        // no-op
+      }
+    });
+  })();
+
+  // Initial previews.
   updateNadpisi();
   updateStikeri();
 });
+

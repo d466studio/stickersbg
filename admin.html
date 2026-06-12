@@ -9,7 +9,7 @@
 <body>
   <header class="topbar">
     <div class="brand">
-      <div class="logoBox"><div style="font-weight:900;color:var(--yellow)">A</div></div>
+      <div class="logoBox"><div style="font-weight:900;color:var(--accent)">A</div></div>
       <div class="brandText">
         <div class="brandName">ADMIN</div>
         <div class="brandTag">управление на цветове</div>
@@ -73,6 +73,31 @@
         </div>
       </div>
     </section>
+  
+    <section class="card" id="adminFonts" style="display:none">
+      <h1>Шрифтове (Font Library)</h1>
+      <p class="muted">Качи шрифтове (TTF/OTF/WOFF/WOFF2). Те ще се появят в дизайнерa в избора за Font (само от този браузър).</p>
+
+      <div class="row2">
+        <label>
+          Име на шрифта (по желание)
+          <input type="text" id="fontName" placeholder="Напр. StreetRacer" />
+        </label>
+        <label>
+          Файл
+          <input type="file" id="fontFile" accept=".ttf,.otf,.woff,.woff2" />
+        </label>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center;margin-top:10px">
+        <button class="btn btnPrimary" type="button" id="btnAddFont">Добави шрифт</button>
+        <span class="muted small" id="fontHint"></span>
+      </div>
+
+      <h2 style="margin-top:18px">Инсталирани шрифтове</h2>
+      <div id="fontList" style="display:grid;gap:10px"></div>
+    </section>
+
   </main>
 
   <script src="admin.js"></script>

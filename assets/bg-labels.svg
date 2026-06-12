@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="980" viewBox="0 0 980 980">
+  <rect width="980" height="980" fill="#0F1014"/>
+  <g fill="#FFFFFF" fill-opacity="0.03" font-family="Inter, Arial, sans-serif" font-weight="600">
+    <text x="60" y="130" font-size="72" transform="rotate(-6 60 130)">VINYL</text>
+    <text x="520" y="210" font-size="64" transform="rotate(4 520 210)">MATTE</text>
+    <text x="90" y="330" font-size="64" transform="rotate(3 90 330)">GLOSSY</text>
+    <text x="480" y="410" font-size="62" transform="rotate(-4 480 410)">CUSTOM CUT</text>
+    <text x="80" y="520" font-size="60" transform="rotate(-2 80 520)">WEATHERPROOF</text>
+    <text x="520" y="640" font-size="64" transform="rotate(5 520 640)">STUDIO PRINT</text>
+    <text x="120" y="780" font-size="64" transform="rotate(2 120 780)">MADE TO LAST</text>
+    <text x="560" y="880" font-size="58" transform="rotate(-5 560 880)">DIE-CUT</text>
+  </g>
+</svg>

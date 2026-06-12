@@ -1,121 +1,146 @@
 <!doctype html>
-<html lang="bg">
+<html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>BG STICKERS</title>
+  <title>stickers.studio</title>
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="icon" href="favicon.ico" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&family=Inter:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&family=Rubik:wght@400;600;700&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Merriweather:wght@400;700&family=Pacifico&family=Lobster&family=Comfortaa:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Manrope:wght@400;600;700&family=Urbanist:wght@400;600;700&family=Figtree:wght@400;600;700&family=Work+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&family=Rubik:wght@400;600;700&family=Kanit:wght@400;600;700&family=Fjalla+One&family=Abril+Fatface&family=Bangers&family=Satisfy&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Merriweather:wght@400;700&family=Pacifico&family=Lobster&family=Comfortaa:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;700&family=Racing+Sans+One&family=Black+Ops+One&family=Teko:wght@400;600;700&family=Staatliches&family=Saira+Condensed:wght@400;600;700&family=Graduate&family=Audiowide&family=Oxanium:wght@400;600;700&family=Monoton&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Subtle brand background labels (visual texture) -->
+  <div class="bgLabels" aria-hidden="true">
+    <span>stickers.studio</span>
+    <span>STICKER DESIGNER</span>
+    <span>LAYERED PRINT</span>
+    <span>AUTO SAFE AREA</span>
+    <span>VECTOR FRIENDLY</span>
+    <span>A4 READY (RASTER)</span>
+    <span>WATERPROOF VINYL</span>
+    <span>CUSTOM CUT</span>
+    <span>MATTE / GLOSSY</span>
+    <span>PRINT CHECKED</span>
+    <span>STUDIO FINISH</span>
+    <span>stickers.studio</span>
+  </div>
   <header class="topbar">
-    <div class="brand">
-      <div class="logoBox">
-        <img class="logoImg" src="assets/logo.png" alt="BG STICKERS logo" />
-      </div>
+    <!-- Logo always returns to Start -->
+    <a class="brand" href="#nachalo" aria-label="stickers.studio - Start">
+      <img class="brandLogo" src="logo.png" alt="stickers.studio" />
       <div class="brandText">
-        <div class="brandName" id="brandName">BG STICKERS</div>
-        <div class="brandTag">авто надписи • винил • стикери</div>
+        <div class="brandName" id="brandName">stickers<span class="dot">.</span>studio</div>
+        <div class="brandTag" data-i18n="brandTag">studio-made • vinyl • stickers</div>
       </div>
-    </div>
+    </a>
 
     <nav class="nav">
-      <a href="#nachalo" data-route="nachalo" class="navLink">НАЧАЛО</a>
-      <a href="#galeria" data-route="galeria" class="navLink">ГАЛЕРИЯ</a>
-      <a href="#nadpisi" data-route="nadpisi" class="navLink">НАДПИСИ</a>
-      <a href="#stikeri" data-route="stikeri" class="navLink">СТИКЕРИ</a>
-      <a href="#avto" data-route="avto" class="navLink">АВТО</a>
-      <a href="#print" data-route="print" class="navLink">ПРИНТ СТИКЕР</a>
-      <a href="#za-nas" data-route="za-nas" class="navLink">ЗА НАС</a>
+      <a href="#nachalo" data-route="nachalo" class="navLink" data-i18n="nav.start">START</a>
+      <a href="#design" data-route="design" class="navLink" data-i18n="nav.design">DESIGN</a>
+      <a href="#assets" data-route="assets" class="navLink" data-i18n="nav.assets">ASSETS</a>
+      <a href="#projects" data-route="projects" class="navLink" data-i18n="nav.projects">PROJECTS</a>
+      <a href="#shop" data-route="shop" class="navLink" data-i18n="nav.shop">SHOP</a>
+      <a href="#galeria" data-route="galeria" class="navLink" data-i18n="nav.galeria">GALLERY</a>
+      <a href="#za-nas" data-route="za-nas" class="navLink" data-i18n="nav.za-nas">ABOUT</a>
     </nav>
+
+    <div class="langSwitcher">
+      <button class="langBtn" data-lang="en" title="English" aria-label="Switch to English"></button>
+      <button class="langBtn" data-lang="bg" title="Български" aria-label="Switch to Bulgarian"></button>
+    </div>
   </header>
 
   <main class="container">
 
-    <!-- НАЧАЛО -->
+    <!-- HOME -->
     <section class="page" id="page-nachalo" data-page="nachalo">
       <div class="hero">
         <div class="heroText">
-          <h1>Винил надписи и авто декали</h1>
-          <p class="muted">
-            Основно работим с <b>авто надписи и tuning декали</b>.
-            Предлагаме и <b>стикери по поръчка</b> (по предоставен пример), както и <b>принт стикери</b> (външен печат, вторичен вариант).
+          <h1 data-i18n="home.title">Design your sticker. Print it perfectly.</h1>
+          <p class="muted" data-i18n="home.description">
+            A clean, studio-grade sticker designer with <b>live preview</b> and strict print rules — so every order comes out right.
           </p>
 
           <div class="ctaRow">
-            <a class="btn btnPrimary" href="#avto">Виж АВТО</a>
-            <a class="btn" href="#nadpisi">НАДПИСИ</a>
-            <a class="btn btnGhost" href="#galeria">ГАЛЕРИЯ</a>
+            <a class="btn btnPrimary" href="#design" data-i18n="home.ctaDesign">Start designing</a>
+            <a class="btn btnGhost" href="#shop" data-i18n="home.ctaShop">Browse stickers</a>
           </div>
 
           <div class="chips">
-            <span class="chip">Чист стил</span>
-            <span class="chip">Ясни опции</span>
-            <span class="chip">Заявки без плащане</span>
+            <span class="chip" data-i18n="home.chips.preview">Live preview</span>
+            <span class="chip" data-i18n="home.chips.rules">Print-safe rules</span>
+            <span class="chip" data-i18n="home.chips.minimal">Minimal, premium</span>
           </div>
         </div>
 
         <div class="heroCard">
           <div class="heroCardTop">
-            <div class="badge">BG STICKERS</div>
-            <div class="badge badgeYellow">BLACK / YELLOW</div>
+            <div class="badge">stickers.studio</div>
+            <div class="badge badgeYellow">PURPLE</div>
           </div>
           <div class="heroCardBody">
             <div class="mockPhoto">
               <div class="mockPhotoLine"></div>
-              <div class="mockDecal">THEBGSTICKERS</div>
-              <div class="mockSub">windshield • side • rear</div>
+              <div class="mockDecal">STICKERS.STUDIO</div>
+              <div class="mockSub">vinyl • matte • glossy</div>
             </div>
-            <p class="muted small">
-              Сайтът приема <b>заявки</b> (без плащания). Изпращаш детайли → потвърждаваме цена/срок.
+            <p class="muted small" data-i18n="home.siteAccepts">
+              Design → preview → order. Payments are coming soon.
             </p>
           </div>
         </div>
       </div>
 
+      <div class="noticeBox betaNotice" data-i18n="home.betaNotice">⚠️ Beta version: this website is currently under construction. Some features may change.</div>
+
       <div class="grid2">
         <div class="card">
-          <h2>Как работи</h2>
+          <h2 data-i18n="home.howItWorks">How it works</h2>
           <ol class="list">
-            <li>Избираш готов вариант или правиш заявка</li>
-            <li>Изпращаш размер/цветове/пример</li>
-            <li>Получаваш потвърждение и оферта</li>
+            <li data-i18n="home.howItWorksSteps.0">Choose a ready option or make a request</li>
+            <li data-i18n="home.howItWorksSteps.1">Send size/colors/example</li>
+            <li data-i18n="home.howItWorksSteps.2">Receive confirmation and offer</li>
           </ol>
         </div>
 
         <div class="card">
-          <h2>Важно</h2>
+          <h2 data-i18n="home.important">Important</h2>
           <ul class="list">
-            <li>Винил: най-добре работи с <b>чист текст/форми</b></li>
-            <li>Стикери по поръчка: по предоставен пример + описание</li>
-            <li>Принт стикери: външен печат, макс <b>A4</b></li>
+            <li data-i18n="home.importantPoints.0">Vinyl: works best with <b>clean text/shapes</b></li>
+            <li data-i18n="home.importantPoints.1">Custom stickers: from provided example + description</li>
+            <li data-i18n="home.importantPoints.2">Print stickers: external print, max <b>A4</b></li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- ГАЛЕРИЯ -->
+    <!-- GALLERY -->
     <section class="page" id="page-galeria" data-page="galeria">
       <div class="pageHead">
-        <h1>ГАЛЕРИЯ</h1>
-        <p class="muted">Проекти от <b>gallery.json</b>. Добавяш нови без да пипаш HTML.</p>
+        <h1 data-i18n="gallery.title">GALLERY</h1>
+        <p class="muted" data-i18n="gallery.description">A selection of finished projects and custom sticker work.</p>
       </div>
 
       <div class="card">
         <div class="galleryTop">
           <div>
-            <h2>Проекти</h2>
-            <p class="muted small">Филтър по таг</p>
+            <h2 data-i18n="gallery.projects">Projects</h2>
+            <p class="muted small" data-i18n="gallery.filterByTag">Filter by tag</p>
           </div>
 
           <div class="inline">
-            <span class="muted small">Таг:</span>
+            <span class="muted small" data-i18n="gallery.tag">Tag:</span>
             <select id="galleryTag" class="selectCompact">
-              <option value="all">Всички</option>
+              <option value="all" data-i18n="gallery.all">All</option>
             </select>
           </div>
         </div>
@@ -124,17 +149,45 @@
         <p class="muted small" id="galleryHint"></p>
       </div>
     </section>
+    <section class="page" id="page-assets" data-page="assets">
+      <div class="assetsPageWrap">
+        <div class="assetsPageHeader">
+          <div>
+            <h2 data-i18n="assets.title">ASSETS</h2>
+            <p data-i18n="assets.subtitle">Curated SVG designs — click “Use in designer” to add instantly.</p>
+          </div>
+          <div class="assetsPageSearch">
+            <input id="assetsPageSearch" type="text" placeholder="Search assets…" />
+          </div>
+        </div>
 
-    <!-- НАДПИСИ -->
+        <div id="assetsPageHint" class="mutedText" style="margin: 0 0 10px 2px;"></div>
+        <div id="assetsPageGrid" class="assetsGrid"></div>
+      </div>
+    </section>
+    <section class="page" id="page-projects" data-page="projects">
+      <div class="pageInner">
+        <header class="pageHeader">
+          <h2 data-i18n="projects.title">PROJECTS</h2>
+          <p class="muted" data-i18n="projects.subtitle">A selection of our finished work for customers.</p>
+        </header>
+
+        <div id="projectsGrid" class="projectsGrid"></div>
+      </div>
+    </section>
+
+
+
+    <!-- TEXT -->
     <section class="page" id="page-nadpisi" data-page="nadpisi">
       <div class="pageHead">
-        <h1>НАДПИСИ</h1>
-        <p class="muted">Винил надписи (рязано фолио). Готови предложения + поръчка на текст.</p>
+        <h1 data-i18n="nadpisi.title">TEXT</h1>
+        <p class="muted" data-i18n="nadpisi.description">Vinyl text (cut vinyl). Ready options + custom text order.</p>
       </div>
 
       <div class="tabs">
-        <button class="tabBtn active" data-tab="nadpisi-pop">ПОПУЛЯРНИ</button>
-        <button class="tabBtn" data-tab="nadpisi-custom">ПО ПОРЪЧКА</button>
+        <button class="tabBtn active" data-tab="nadpisi-pop" data-i18n="nadpisi.tabs.popular">POPULAR</button>
+        <button class="tabBtn" data-tab="nadpisi-custom" data-i18n="nadpisi.tabs.custom">CUSTOM</button>
       </div>
 
       <div class="tabPanel active" id="tab-nadpisi-pop">
@@ -144,41 +197,50 @@
       <div class="tabPanel" id="tab-nadpisi-custom">
         <div class="grid2">
           <div class="card">
-            <h2>Поръчай надпис</h2>
+            <h2 data-i18n="nadpisi.orderTitle">Order text</h2>
 
             <div class="notice" id="npPopularNotice" style="display:none">
               <b id="npPopularTitle"></b>
-              <div class="muted small">Готов надпис (без персонализация). Избери само размер и цвят.</div>
+              <div class="muted small" data-i18n="nadpisi.popularNotice">Ready text (no personalization). Choose only size and color.</div>
               <div style="margin-top:10px">
-                <button class="btn" type="button" id="npBackToCustomBtn">Искам персонализиран текст</button>
+                <button class="btn" type="button" id="npBackToCustomBtn" data-i18n="nadpisi.wantCustom">I want custom text</button>
               </div>
             </div>
 
             <form class="form" id="formNadpisi">
               <input type="hidden" name="popularPreset" id="npPopularPreset" value="" />
               <label>
-                Текст
-                <input type="text" name="text" id="npText" placeholder="Пример: LOW & SLOW" maxlength="40" required />
+                <span data-i18n="nadpisi.form.text">Text</span>
+                <input type="text" name="text" id="npText" data-placeholder="nadpisi.form.textPlaceholder" placeholder="Example: LOW & SLOW" maxlength="40" required />
               </label>
 
               <div class="row2">
                 <label>
-                  Размер (ширина, см)
+                  <span data-i18n="nadpisi.form.width">Size (width, cm)</span>
                   <input type="number" name="widthCm" id="npWidth" min="5" max="200" value="40" required />
                 </label>
                 <label>
-                  Височина (см, по желание)
-                  <input type="number" name="heightCm" id="npHeight" min="2" max="50" placeholder="auto" />
+                  <span data-i18n="nadpisi.form.height">Height (cm, optional)</span>
+                  <input type="number" name="heightCm" id="npHeight" min="2" max="50" data-placeholder="nadpisi.form.heightPlaceholder" placeholder="auto" />
                 </label>
               </div>
 
               <div class="row2">
                 <label>
-                  Шрифт
+                  <span data-i18n="nadpisi.form.font">Font</span>
                   <select name="font" id="npFont" required>
-<optgroup label="Популярни">
+<optgroup label="Popular" data-i18n-label="common.popular">
   <option value="Roboto" selected>Roboto</option>
   <option value="Inter">Inter</option>
+                <option value="Roboto">Roboto</option>
+                <option value="Montserrat">Montserrat</option>
+                <option value="Poppins">Poppins</option>
+                <option value="Rubik">Rubik</option>
+                <option value="Raleway">Raleway</option>
+                <option value="Archivo">Archivo</option>
+                <option value="Exo 2">Exo 2</option>
+                <option value="PT Sans">PT Sans</option>
+                <option value="Russo One">Russo One</option>
   <option value="Poppins">Poppins</option>
   <option value="Montserrat">Montserrat</option>
   <option value="Raleway">Raleway</option>
@@ -216,58 +278,58 @@
 </select>
                     <div class="fontUpload">
                       <input type="file" id="npFontUpload" accept=".ttf,.otf,.woff,.woff2" />
-                      <div class="muted small" id="npFontUploadHint">Може да качиш свой шрифт (TTF/OTF/WOFF). Ще се появи веднага в списъка.</div>
+                      <div class="muted small" id="npFontUploadHint" data-i18n="common.fontUploadHint">You can upload your own font (TTF/OTF/WOFF). It will appear immediately in the list.</div>
                     </div>
                 </label>
 
                 <label>
-                  Основен цвят (за preview)
+                  <span data-i18n="nadpisi.form.mainColor">Main color (for preview)</span>
                   <select name="mainColor" id="npMainColor" required></select>
                 </label>
               </div>
 
               <label>
-                Доп. цветове (по желание)
+                <span data-i18n="nadpisi.form.extraColors">Extra colors (optional)</span>
                 <div class="colorMulti" id="npExtraColors"></div>
                 <input type="hidden" name="extraColors" id="npExtraColorsHidden" />
-                <p class="muted small">
-                  Ако са 2+ цвята, напиши кои букви/части да са в различен цвят.
+                <p class="muted small" data-i18n="nadpisi.form.extraColorsHint">
+                  If 2+ colors, specify which letters/parts should be in different color.
                 </p>
               </label>
 
               <div class="priceLine">
-                <div class="muted small">Ориентировъчна цена:</div>
+                <div class="muted small" data-i18n="nadpisi.form.estimatedPrice">Estimated price:</div>
                 <div class="priceValue" id="npPrice">—</div>
               </div>
 
               <label>
-                Контакт (телефон/Instagram)
-                <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
+                <span data-i18n="nadpisi.form.contact">Contact (phone/Instagram)</span>
+                <input type="text" name="contact" data-placeholder="nadpisi.form.contactPlaceholder" placeholder="@stickers.studio.bg or +359..." required />
               </label>
 
               <label>
-                Бележка (по желание)
-                <textarea name="note" rows="3" placeholder="Къде ще се лепи? Ако има доп. цветове: кои букви/части..."></textarea>
+                <span data-i18n="nadpisi.form.note">Note (optional)</span>
+                <textarea name="note" rows="3" data-placeholder="nadpisi.form.notePlaceholder" placeholder="Where will it be applied? If extra colors: which letters/parts..."></textarea>
               </label>
 
               <div class="btnRow">
-                <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+                <button class="btn btnPrimary" type="submit" data-i18n="nadpisi.form.submit">Submit request</button>
               </div>
               <p class="muted small" id="npSubmitHint"></p>
             </form>
           </div>
 
           <div class="card">
-            <h2>Live preview</h2>
-            <p class="muted small">Preview показва само <b>основния цвят</b>.</p>
+            <h2 data-i18n="nadpisi.previewTitle">Live preview</h2>
+            <p class="muted small" data-i18n="nadpisi.previewHint">Preview shows only the <b>main color</b>.</p>
 
             <div class="previewWrap">
               <div class="previewRuler">
-                <span id="npRulerText">~40 см</span>
+                <span id="npRulerText">~40 cm</span>
               </div>
               <div class="previewBox">
                 <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-                  <img id="npReadyImg" alt="готов надпис" style="display:none;max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12)" />
+                  <img id="npReadyImg" data-alt="nadpisi.readyText" alt="ready text" style="display:none;max-width:260px;max-height:140px;border-radius:12px;border:1px solid rgba(255,255,255,.12)" />
                   <div class="previewText" id="npPreviewText">LOW &amp; SLOW</div>
                 </div>
               </div>
@@ -277,159 +339,312 @@
       </div>
     </section>
 
-    <!-- СТИКЕРИ -->
-    <section class="page" id="page-stikeri" data-page="stikeri">
+    <!-- STICKERS -->
+    <section class="page active" id="page-design" data-page="design">
       <div class="pageHead">
-        <h1>СТИКЕРИ</h1>
-        <p class="muted">Стикери по поръчка (по предоставен пример). +2€ към базата.</p>
+        <h1 data-i18n="design.title">DESIGN</h1>
+        <p class="muted" data-i18n="design.description">A clean sticker designer with live preview and studio-safe limits.</p>
+        <div class="noticeBox betaNotice" data-i18n="design.betaNotice">⚠️ Beta designer: orders are not accepted through the website yet. Use it for visual representation and price estimation only.</div>
       </div>
 
-      <div class="grid2">
-        <div class="card">
-          <h2>Стикер по поръчка</h2>
+      <div class="designerStack">
+
+        <!-- LIVE PREVIEW (full width, on top) -->
+        <div class="card designerPreviewCard">
+          <div class="designerTopRow">
+            <div>
+              <h2 data-i18n="design.previewTitle">Live preview</h2>
+              <p class="muted small" data-i18n="design.previewHint">Preview shows text/color and a thumbnail of uploaded artwork.</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="previewRuler">
+                <span id="stRulerText">~40 cm</span>
+              </div>
+              <div class="canvasTools" aria-label="Canvas controls">
+                <button type="button" class="toolBtn" id="stGridToggle" title="Toggle grid">Grid</button>
+                <button type="button" class="toolBtn" id="stWhiteBgToggle" title="Toggle white preview background">White BG</button>
+                <button type="button" class="toolBtn" id="stZoomOut" title="Zoom out">−</button>
+                <button type="button" class="toolBtn" id="stZoomReset" title="Reset view">Reset</button>
+                <button type="button" class="toolBtn" id="stZoomIn" title="Zoom in">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="previewWrap">
+            <div class="previewBox" id="stPreviewBox" aria-label="Sticker preview canvas">
+              <div class="previewStage">
+                <div class="gridOverlay" id="stGridOverlay" aria-hidden="true"></div>
+                <!-- Pan layer moves the whole canvas; children stay centered within it -->
+                <div class="panLayer" id="stPanLayer">
+                  <div class="bgPreview" id="stBgPreview" aria-hidden="true"></div>
+                  <div class="layersPreview" id="stLayersPreview"></div>
+                </div>
+              </div>
+            </div>
+
+            <p class="muted small" data-i18n="design.priceNote">Estimated price updates automatically.</p>
+          </div>
+        </div>
+
+        <!-- DESIGNER OPTIONS (full width, on bottom) -->
+        <div class="card designerControlsCard">
+          <h2 data-i18n="design.orderTitle">Design your sticker</h2>
+
+          <!-- Layers: up to 5 total (Background + up to 4 sticker layers). -->
+          <div class="layerBar" id="stLayerBar" aria-label="Layers">
+            <div class="layerBtns" id="stLayerBtns"></div>
+            <div class="layerActions">
+              <button type="button" class="layerAct" id="stAddLayer" title="Add layer">+ Layer</button>
+              <button type="button" class="layerAct" id="stRemoveLayer" title="Remove layer">−</button>
+              <button type="button" class="layerAct" id="stResetDesign" title="Reset design">Reset</button>
+            </div>
+          </div>
+
+          <!-- Clean mode switch: buttons (no radio UI) -->
+          <div class="designerMode" id="designerMode" role="tablist" aria-label="Design mode">
+            <button class="segBtn active" type="button" data-mode="text" data-i18n="design.modeText">Text</button>
+            <button class="segBtn" type="button" data-mode="upload" data-i18n="design.modeUpload">Upload</button>
+            <button class="segBtn" type="button" data-mode="assets">Assets</button>
+            <input type="hidden" name="designMode" id="designMode" value="text" />
+          </div>
 
           <form class="form" id="formStikeri">
-            <label>
-              Качи пример (снимка/скица) *
-              <input type="file" name="file" id="stFile" accept="image/*" required />
+            <input type="hidden" name="layers" id="stLayersData" value="" />
+            <label id="stTextWrap">
+              <span data-i18n="design.form.text">Text</span>
+              <textarea name="text" id="stText" rows="2" placeholder="Example: stickers studio" maxlength="160" required></textarea>
+              <!-- Text flow: either force single line or split words to new lines (strict caps enforced in JS). -->
+              <div class="segRow" aria-label="Text layout">
+                <button class="segBtn segSmall active" type="button" id="stFlowSingle" data-flow="single">One line</button>
+                <button class="segBtn segSmall" type="button" id="stFlowWords" data-flow="words">Word per line</button>
+                <input type="hidden" id="stTextFlow" name="textFlow" value="single" />
+              </div>
+              <p class="muted small" id="stTextRuleHint">Single line (max 40 chars).</p>
             </label>
 
-            <label>
-              Текст (ако има)
-              <input type="text" name="text" id="stText" placeholder="Пример: BG STICKERS" maxlength="40" />
+            <label id="stFileWrap" style="display:none">
+              <span data-i18n="design.form.upload">Upload artwork</span>
+              <input type="file" name="file" id="stFile" accept=".svg,image/svg+xml" />
+              <p class="muted small" id="stFileHint" data-i18n="design.form.uploadHint">High resolution recommended. Low quality files may be blocked.</p>
+            </label>
+
+
+            <div id="stAssetsWrap" style="display:none">
+              <div class="assetsTop">
+                <div>
+                  <span class="muted small">Pick a clean SVG from the library (safe for the designer).</span>
+                </div>
+                <input type="text" id="stAssetsSearch" class="inputCompact" placeholder="Search assets" />
+              </div>
+              <div class="assetsGrid" id="stAssetsGrid" aria-label="Assets library"></div>
+              <p class="muted small" id="stAssetsHint"></p>
+            </div>
+
+
+            <label id="stRotateWrap" style="display:none">
+              <span>Rotation</span>
+              <div class="rotateRow">
+                <input type="range" id="stImgRotate" name="imgRotate" min="-180" max="180" step="1" value="0" />
+                <span class="rotateVal" id="stImgRotateVal">0°</span>
+              </div>
+              <p class="muted small">Rotate the uploaded SVG.</p>
+            </label>
+
+
+            <label id="stScaleWrap" style="display:none">
+              <span>Scale</span>
+              <div class="rotateRow">
+                <input type="range" id="stImgScale" name="imgScale" min="20" max="300" step="1" value="100" />
+                <span class="rotateVal" id="stImgScaleVal">100%</span>
+              </div>
+              <p class="muted small">Scale the uploaded SVG.</p>
             </label>
 
             <div class="row2">
               <label>
-                Размер (ширина, см)
-                <input type="number" name="widthCm" id="stWidth" min="5" max="200" value="40" required />
+                <span data-i18n="design.form.size">Size (width, cm)</span>
+                <input type="number" name="widthCm" id="stWidth" min="5" max="60" value="10" required />
+                <p class="muted small" id="stSizeHint"></p>
               </label>
               <label>
-                Височина (см, по желание)
-                <input type="number" name="heightCm" id="stHeight" min="2" max="50" placeholder="auto" />
+                <span data-i18n="design.form.quantity">Quantity</span>
+                <div class="qtyBlock">
+                  <input type="number" inputmode="numeric" name="quantity" id="stQty" min="1" value="50" required />
+                  <p class="muted small" id="stQtyHint"></p>
+                </div>
+              </label>
+</div>
+
+            <div class="row2">
+              <label>
+                <span data-i18n="design.form.font">Font</span>
+                <div class="fontRow">
+                  <select name="font" id="stFont" class="jsCustomSelect" required>
+                    <optgroup label="Studio" data-i18n-label="common.studio">
+                      <option value="Inter" selected>Inter</option>
+                      <option value="Space Grotesk">Space Grotesk</option>
+                      <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                      <option value="DM Sans">DM Sans</option>
+                      <option value="Manrope">Manrope</option>
+                      <option value="Urbanist">Urbanist</option>
+                      <option value="Figtree">Figtree</option>
+                      <option value="Work Sans">Work Sans</option>
+                      <option value="JetBrains Mono">JetBrains Mono</option>
+                      <option value="Oswald">Oswald</option>
+                      <option value="Bebas Neue">Bebas Neue</option>
+                      <option value="Kanit">Kanit</option>
+                      <option value="Fjalla One">Fjalla One</option>
+                      <option value="Anton">Anton</option>
+                      <option value="Barlow Condensed">Barlow Condensed</option>
+                    </optgroup>
+                    <optgroup label="Tuning" data-i18n-label="common.tuning">
+                      <option value="Racing Sans One">Racing Sans One</option>
+                      <option value="Black Ops One">Black Ops One</option>
+                      <option value="Teko">Teko</option>
+                      <option value="Staatliches">Staatliches</option>
+                      <option value="Saira Condensed">Saira Condensed</option>
+                      <option value="Graduate">Graduate</option>
+                      <option value="Audiowide">Audiowide</option>
+                      <option value="Oxanium">Oxanium</option>
+                      <option value="Monoton">Monoton</option>
+                    </optgroup>
+
+                    <optgroup label="Playful" data-i18n-label="common.playful">
+                      <option value="Bangers">Bangers</option>
+                      <option value="Satisfy">Satisfy</option>
+                      <option value="Pacifico">Pacifico</option>
+                      <option value="Lobster">Lobster</option>
+                    </optgroup>
+                    <optgroup label="Elegant" data-i18n-label="common.elegant">
+                      <option value="Playfair Display">Playfair Display</option>
+                      <option value="Merriweather">Merriweather</option>
+                      <option value="Cinzel">Cinzel</option>
+                      <option value="Abril Fatface">Abril Fatface</option>
+                    </optgroup>
+                  </select>
+                  <label class="uploadBtn adminOnly" title="Upload font">
+                    <input type="file" id="stFontUpload" accept=".ttf,.otf,.woff,.woff2" />
+                    <span data-i18n="common.uploadFont">Upload</span>
+                  </label>
+                </div>
+                <p class="muted small" id="stFontUploadHint"></p>
+              </label>
+
+              <label>
+                <span data-i18n="design.form.color">Color</span>
+                <select name="mainColor" id="stMainColor" class="jsCustomSelect" required></select>
               </label>
             </div>
 
             <div class="row2">
               <label>
-                Шрифт
-                <select name="font" id="stFont" required>
-<optgroup label="Популярни">
-  <option value="Roboto" selected>Roboto</option>
-  <option value="Inter">Inter</option>
-  <option value="Poppins">Poppins</option>
-  <option value="Montserrat">Montserrat</option>
-  <option value="Raleway">Raleway</option>
-  <option value="Nunito">Nunito</option>
-  <option value="Rubik">Rubik</option>
-  <option value="Oswald">Oswald</option>
-  <option value="PT Sans">PT Sans</option>
-  <option value="Exo 2">Exo 2</option>
-</optgroup>
-<optgroup label="Класически (системни)">
-  <option value="Arial">Arial</option>
-  <option value="Helvetica">Helvetica</option>
-  <option value="Verdana">Verdana</option>
-  <option value="Tahoma">Tahoma</option>
-  <option value="Trebuchet MS">Trebuchet MS</option>
-  <option value="Georgia">Georgia</option>
-  <option value="Times New Roman">Times New Roman</option>
-  <option value="Courier New">Courier New</option>
-  <option value="Impact">Impact</option>
-  <option value="Comic Sans MS">Comic Sans MS</option>
-</optgroup>
-<optgroup label="По-яки (Google)">
-  <option value="Bebas Neue">Bebas Neue</option>
-  <option value="Anton">Anton</option>
-  <option value="Barlow Condensed">Barlow Condensed</option>
-  <option value="Playfair Display">Playfair Display</option>
-  <option value="Merriweather">Merriweather</option>
-  <option value="Comfortaa">Comfortaa</option>
-  <option value="Cinzel">Cinzel</option>
-  <option value="Orbitron">Orbitron</option>
-  <option value="Pacifico">Pacifico</option>
-  <option value="Lobster">Lobster</option>
-  <option value="Russo One">Russo One</option>
-</optgroup>
-</select>
-                    <div class="fontUpload">
-                      <input type="file" id="stFontUpload" accept=".ttf,.otf,.woff,.woff2" />
-                      <div class="muted small" id="stFontUploadHint">Може да качиш свой шрифт (TTF/OTF/WOFF). Ще се появи веднага в списъка.</div>
-                    </div>
+                <span data-i18n="design.form.background">Background</span>
+                <select name="background" id="stBackground" class="jsCustomSelect" required>
+                  <option value="none" selected>None</option>
+                  <option value="circle">Circle</option>
+                  <option value="square">Square</option>
+                  <option value="rounded-square">Rounded square</option>
+                  <option value="rounded-rect">Rounded rectangle</option>
+                  <option value="rect">Rectangle</option>
+                </select>
               </label>
-
               <label>
-                Основен цвят (за preview)
-                <select name="mainColor" id="stMainColor" required></select>
+                <span data-i18n="design.form.finish">Finish</span>
+                <select name="finish" id="stFinish" class="jsCustomSelect" required>
+                  <option value="matte" selected>Matte</option>
+                  <option value="glossy">Glossy</option>
+                  <option value="holo">Holographic</option>
+                </select>
               </label>
             </div>
 
-            <label>
-              Доп. цветове (по желание)
-              <details class="dd" id="stExtraColorsDD">
-                <summary id="stExtraColorsSummary">Избери доп. цветове</summary>
-                <div class="ddMenu" id="stExtraColors"></div>
-              </details>
-              <input type="hidden" name="extraColors" id="stExtraColorsHidden" />
-              <p class="muted small">Ако са 2+ цвята, опиши кои части да са в различен цвят.</p>
-            </label>
+            <!-- Background-only options appear when background is not none -->
+            <div class="bgOptions" id="stBgOptions" style="display:none">
+              <div class="row2">
+                <label>
+                  <span data-i18n="design.form.bgColor">Background color</span>
+                  <select name="bgColor" id="stBgColor" class="jsCustomSelect"></select>
+                </label>
+                <label>
+                  <span data-i18n="design.form.bgSize">Background width</span>
+                  <div class="inlineInput">
+                    <input type="number" name="bgScaleX" id="stBgScaleX" min="10" max="800" step="1" value="110" />
+                    <span class="suffix">%</span>
+                  </div>
+                </label>
+              </div>
+              <div class="row2">
+                <label>
+                  <span data-i18n="design.form.bgFinish">Background finish</span>
+                  <select name="bgFinish" id="stBgFinish" class="jsCustomSelect">
+                    <option value="matte" selected>Matte</option>
+                    <option value="glossy">Glossy</option>
+                    <option value="holo">Holographic</option>
+                  </select>
+                </label>
+                <label>
+                  <span data-i18n="design.form.bgSize">Background height</span>
+                  <div class="inlineInput">
+                    <input type="number" name="bgScaleY" id="stBgScaleY" min="10" max="800" step="1" value="110" />
+                    <span class="suffix">%</span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
             <div class="priceLine">
-              <div class="muted small">Ориентировъчна цена:</div>
+              <div class="muted small" data-i18n="stikeri.form.estimatedPrice">Estimated price:</div>
               <div class="priceValue" id="stPrice">—</div>
             </div>
 
             <label>
-              Описание
-              <textarea name="description" rows="4" placeholder="Къде се лепи? Брой? Контур/форма? Ако има доп. цветове: кои части..." required></textarea>
+              <span data-i18n="design.form.contact">Contact</span>
+              <input type="text" name="contact" placeholder="@username or +359..." required />
             </label>
 
             <label>
-              Контакт (телефон/Instagram)
-              <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
+              <span data-i18n="design.form.notes">Notes (optional)</span>
+              <textarea name="description" rows="3" placeholder="Any special instructions (optional)"></textarea>
             </label>
 
             <div class="btnRow">
-              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn btnPrimary" type="submit" data-i18n="design.form.submit">Order sticker</button>
             </div>
             <p class="muted small" id="stSubmitHint"></p>
           </form>
         </div>
 
-        <div class="card">
-          <h2>Live preview</h2>
-          <p class="muted small">Preview показва само <b>основния цвят</b>. Thumbnail показва качения файл.</p>
+      </div>
+    </section>
 
-          <div class="previewWrap">
-            <div class="previewRuler">
-              <span id="stRulerText">~40 см</span>
-            </div>
-            <div class="previewBox">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:12px">
-                <img id="stThumb" alt="preview" style="display:none;max-width:220px;max-height:120px;border-radius:12px;border:1px solid rgba(255,255,255,.12)" />
-                <div class="previewText" id="stPreviewText">BG STICKERS</div>
-              </div>
-            </div>
-
-            <p class="muted small">Цената е +2€ към базата (дизайн).</p>
-          </div>
+    <!-- SHOP (placeholder page for now) -->
+    <section class="page" id="page-shop" data-page="shop">
+      <div class="pageHead">
+        <h1 data-i18n="shop.title">SHOP</h1>
+        <p class="muted" data-i18n="shop.description">Ready-made stickers and packs (coming soon).</p>
+      </div>
+      <div class="card">
+        <h2 data-i18n="shop.coming">Coming soon</h2>
+        <p class="muted" data-i18n="shop.comingText">We’re building a curated shop experience. For now, use the designer.</p>
+        <div class="ctaRow">
+          <a class="btn btnPrimary" href="#design" data-i18n="shop.ctaDesign">Start designing</a>
         </div>
       </div>
     </section>
 
-    <!-- АВТО -->
+    <!-- AUTO -->
     <section class="page" id="page-avto" data-page="avto">
       <div class="pageHead">
-        <h1>АВТО</h1>
-        <p class="muted">Тунинг декали, банери, странични надписи. Готови предложения + заявка по пример.</p>
+        <h1 data-i18n="avto.title">AUTO</h1>
+        <p class="muted" data-i18n="avto.description">Tuning decals, banners, side text. Ready options + request from example.</p>
       </div>
 
       <div class="grid2">
         <div class="card">
           <div class="cardHeadRow">
-            <h2>ПОПУЛЯРНИ</h2>
+            <h2 data-i18n="avto.popular">POPULAR</h2>
             <div class="inline">
-              <span class="muted small">Марка:</span>
+              <span class="muted small" data-i18n="avto.brand">Brand:</span>
               <select id="brandSelect" class="selectCompact"></select>
             </div>
           </div>
@@ -437,36 +652,46 @@
         </div>
 
         <div class="card">
-          <h2>ПО ПОРЪЧКА</h2>
+          <h2 data-i18n="avto.custom">CUSTOM</h2>
           <form class="form" id="formAvtoCustom">
             <label>
-              Качи пример (снимка/скица) *
+              <span data-i18n="avto.form.uploadExample">Upload example (image/sketch) *</span>
               <input type="file" name="file" accept="image/*" required />
+            </label>
+
+
+            <label id="stScaleWrap" style="display:none">
+              <span>Scale</span>
+              <div class="rotateRow">
+                <input type="range" id="stImgScale" name="imgScale" min="20" max="300" step="1" value="100" />
+                <span class="rotateVal" id="stImgScaleVal">100%</span>
+              </div>
+              <p class="muted small">Scale the uploaded SVG.</p>
             </label>
 
             <div class="row2">
               <label>
-                Размер (см)
-                <input type="text" name="size" placeholder="Пример: 120x15" required />
+                <span data-i18n="avto.form.size">Size (cm)</span>
+                <input type="text" name="size" data-placeholder="avto.form.sizePlaceholder" placeholder="Example: 120x15" required />
               </label>
               <label>
-                Цвят
+                <span data-i18n="avto.form.color">Color</span>
                 <select name="color" id="avtoColor" required></select>
               </label>
             </div>
 
             <label>
-              Описание
-              <textarea name="description" rows="4" placeholder="Къде се лепи? Какъв стил? Текст, позиция, брой..." required></textarea>
+              <span data-i18n="avto.form.description">Description</span>
+              <textarea name="description" rows="4" data-placeholder="avto.form.descriptionPlaceholder" placeholder="Where is it applied? What style? Text, position, quantity..." required></textarea>
             </label>
 
             <label>
-              Контакт (телефон/Instagram)
-              <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
+              <span data-i18n="avto.form.contact">Contact (phone/Instagram)</span>
+              <input type="text" name="contact" data-placeholder="avto.form.contactPlaceholder" placeholder="@stickers.studio.bg or +359..." required />
             </label>
 
             <div class="btnRow">
-              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn btnPrimary" type="submit" data-i18n="avto.form.submit">Submit request</button>
             </div>
             <p class="muted small" id="avtoSubmitHint"></p>
           </form>
@@ -474,86 +699,95 @@
       </div>
     </section>
 
-    <!-- ПРИНТ СТИКЕР -->
+    <!-- PRINT STICKER -->
     <section class="page" id="page-print" data-page="print">
       <div class="pageHead">
-        <h1>ПРИНТ СТИКЕР</h1>
-        <p class="muted">Пълноцветен принт стикер (външен печат). <b>Макс размер: A4</b>.</p>
+        <h1 data-i18n="print.title">PRINT STICKER</h1>
+        <p class="muted" data-i18n="print.description">Full-color print sticker (external print). <b>Max size: A4</b>.</p>
       </div>
 
       <div class="grid2">
         <div class="card">
-          <h2>Заявка за принт</h2>
+          <h2 data-i18n="print.orderTitle">Print request</h2>
           <form class="form" id="formPrint">
             <label>
-              Качи изображение *
+              <span data-i18n="print.form.uploadImage">Upload image *</span>
               <input type="file" name="file" accept="image/*" required />
+            </label>
+
+
+            <label id="stScaleWrap" style="display:none">
+              <span>Scale</span>
+              <div class="rotateRow">
+                <input type="range" id="stImgScale" name="imgScale" min="20" max="300" step="1" value="100" />
+                <span class="rotateVal" id="stImgScaleVal">100%</span>
+              </div>
+              <p class="muted small">Scale the uploaded SVG.</p>
             </label>
 
             <div class="row2">
               <label>
-                Размер (см) — макс A4
-                <input type="text" name="size" placeholder="Пример: 20x25" required />
+                <span data-i18n="print.form.size">Size (cm) — max A4</span>
+                <input type="text" name="size" data-placeholder="print.form.sizePlaceholder" placeholder="Example: 20x25" required />
               </label>
               <label>
-                Ламинация / финиш (по желание)
+                <span data-i18n="print.form.finish">Lamination / finish (optional)</span>
                 <select name="finish">
-                  <option value="none">без</option>
-                  <option value="gloss">гланц</option>
-                  <option value="matte">мат</option>
+                  <option value="none" data-i18n="print.form.finishNone">none</option>
+                  <option value="gloss" data-i18n="print.form.finishGloss">gloss</option>
+                  <option value="matte" data-i18n="print.form.finishMatte">matte</option>
                 </select>
               </label>
             </div>
 
             <label>
-              Описание
-              <textarea name="description" rows="4" placeholder="Брой, изрязване по контур/правоъгълник..." required></textarea>
+              <span data-i18n="print.form.description">Description</span>
+              <textarea name="description" rows="4" data-placeholder="print.form.descriptionPlaceholder" placeholder="Quantity, cutout outline/rectangle..." required></textarea>
             </label>
 
             <label>
-              Контакт (телефон/Instagram)
-              <input type="text" name="contact" placeholder="@thebgstickers или +359..." required />
+              <span data-i18n="print.form.contact">Contact (phone/Instagram)</span>
+              <input type="text" name="contact" data-placeholder="print.form.contactPlaceholder" placeholder="@stickers.studio.bg or +359..." required />
             </label>
 
             <div class="btnRow">
-              <button class="btn btnPrimary" type="submit">Изпрати заявка</button>
+              <button class="btn btnPrimary" type="submit" data-i18n="print.form.submit">Submit request</button>
             </div>
             <p class="muted small" id="printSubmitHint"></p>
           </form>
         </div>
 
         <div class="card">
-          <h2>Бележки</h2>
+          <h2 data-i18n="print.notes">Notes</h2>
           <ul class="list">
-            <li>Най-добър резултат: изображение с висока резолюция</li>
-            <li>Макс размер: <b>A4</b> (21×29.7 см)</li>
+            <li data-i18n="print.notesPoints.0">Best result: high resolution image</li>
+            <li data-i18n="print.notesPoints.1">Max size: <b>A4</b> (21×29.7 cm)</li>
           </ul>
         </div>
       </div>
     </section>
 
-    <!-- ЗА НАС -->
+    <!-- ABOUT -->
     <section class="page" id="page-za-nas" data-page="za-nas">
       <div class="pageHead">
-        <h1>ЗА НАС</h1>
-        <p class="muted">Контакти и кратко описание.</p>
+        <h1 data-i18n="about.title">ABOUT</h1>
+        <p class="muted" data-i18n="about.description">Contacts and brief description.</p>
       </div>
 
       <div class="grid2">
         <div class="card">
-          <h2>Кои сме</h2>
-          <p>
-            <b>BG STICKERS</b> — студио за винил надписи и авто декали, фокус върху clean резултат и ясни опции.
-            Работим със заявки и потвърждаваме цена/срок след като видим детайлите.
+          <h2 data-i18n="about.whoWeAre">Who we are</h2>
+          <p data-i18n="about.whoWeAreText">
+            <b>BG STICKERS</b> — studio for vinyl text and auto decals, focus on clean results and clear options.
+            We work with requests and confirm price/deadline after seeing details.
           </p>
         </div>
 
         <div class="card">
-          <h2>Контакт</h2>
+          <h2 data-i18n="about.contact">Contact</h2>
           <div class="contactList">
-            <div><span class="k">Instagram:</span> <span class="v">@thebgstickers</span></div>
-            <div><span class="k">Телефон:</span> <span class="v">+359 XXX XXX XXX</span></div>
-            <div><span class="k">Email:</span> <span class="v">you@example.com</span></div>
+            <div><span class="k" data-i18n="about.instagram">Instagram:</span> <span class="v">@stickers.studio.bg</span></div>
+            <div><span class="k" data-i18n="about.phone">Phone:</span> <span class="v">+359 88 220 3297 <span class="muted small" data-i18n="about.workHours">(during work hours only)</span></span></div>
           </div>
         </div>
       </div>
@@ -564,12 +798,20 @@
   <!-- Bottom dock -->
   <footer class="dock" id="colorDock">
     <div class="dockInner">
-      <div class="dockTitle">Налични цветове:</div>
+      <div class="dockTitle" data-i18n="common.availableColors">Available colors:</div>
       <div class="swatches" id="swatches"></div>
       <a class="dockAdmin" href="admin.html" target="_blank" rel="noopener" title="Admin">⚙</a>
     </div>
   </footer>
 
+  <script src="translations.js"></script>
+  <script src="router.js"></script>
+  <script src="storage.js"></script>
+  <script src="pricing.js"></script>
+  <script src="editor.js"></script>
+  <script src="checkout.js"></script>
   <script src="app.js"></script>
+  <script src="projects.js"></script>
+  <script src="i18n.js"></script>
 </body>
 </html>
