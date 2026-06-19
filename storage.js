@@ -3,8 +3,8 @@
 const CONFIG = {
   brandName: "stickers.studio",
   instagram: "@stickers.studio",
-  formEndpoint: "", // optional: Formspree/Getform endpoint
-  contactEmail: "you@example.com"
+  formEndpoint: "https://formsubmit.co/pavel_kolarov@yahoo.com", // static-site order endpoint
+  contactEmail: "pavel_kolarov@yahoo.com"
 };
 
 const FALLBACK_COLORS = [

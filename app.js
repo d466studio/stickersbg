@@ -513,8 +513,14 @@ window.addEventListener("DOMContentLoaded", async function () {
   ["stText", "stTextFlow", "stWidth", "stFont", "stMainColor", "stBackground", "stFinish", "stQty", "stBgColor", "stBgScaleX", "stBgScaleY", "stBgFinish", "stImgRotate", "stImgScale"].forEach(function (id) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.addEventListener("input", function(){ syncStickerDesignerFromInputs(); updateStikeri(); });
-    el.addEventListener("change", function(){ syncStickerDesignerFromInputs(); updateStikeri(); });
+    function handle(){
+      if (id === "stWidth" && typeof _scaleAllStickerLayersToWholeWidth === "function") _scaleAllStickerLayersToWholeWidth(el.value);
+      syncStickerDesignerFromInputs();
+      updateStikeri();
+      if (id === "stWidth" && typeof _applyInputsFromActiveLayer === "function") _applyInputsFromActiveLayer();
+    }
+    el.addEventListener("input", handle);
+    el.addEventListener("change", handle);
   });
 
   // Rotation value label
@@ -604,6 +610,7 @@ window.addEventListener("DOMContentLoaded", async function () {
         };
     window.ST_DESIGN_STATE = {
       activeKey: "sticker:0",
+      wholeWidthCm: Number((document.getElementById("stWidth") && document.getElementById("stWidth").value) || 10),
       stickerLayers: [
         {
           mode: "text",
@@ -617,7 +624,8 @@ window.addEventListener("DOMContentLoaded", async function () {
           offsetX: 0,
           offsetY: 0,
           rotationDeg: 0,
-          scale: 1
+          scale: 1,
+          widthCm: 10
         }
       ]
     };
@@ -632,6 +640,28 @@ window.addEventListener("DOMContentLoaded", async function () {
   function _maxStickerLayers() {
     // Total max layers = 5. If background is enabled, one slot is reserved for it.
     return _designerHasBackground() ? 4 : 5;
+  }
+
+  function _scaleAllStickerLayersToWholeWidth(newWidthCm) {
+    const st = _ensureDesignerState();
+    const n = Number(newWidthCm);
+    if (!isFinite(n) || n <= 0) return;
+    const old = isFinite(Number(st.wholeWidthCm)) ? Number(st.wholeWidthCm) : n;
+    st.wholeWidthCm = n;
+    if (!old || Math.abs(old - n) < 0.0001) return;
+    const ratio = n / old;
+    if (!isFinite(ratio) || ratio <= 0) return;
+    (st.stickerLayers || []).forEach(function(layer){
+      const current = isFinite(Number(layer.widthCm)) ? Number(layer.widthCm) : old;
+      layer.widthCm = Math.max(1, Math.min(200, current * ratio));
+    });
+    const active = st.activeKey || 'sticker:0';
+    if (active.startsWith('sticker:')) {
+      const idx = Number(active.split(':')[1] || 0);
+      const layer = st.stickerLayers[idx];
+      const layerWidthEl = document.getElementById('stLayerWidth');
+      if (layerWidthEl && layer) layerWidthEl.value = String(Math.round(Number(layer.widthCm) * 10) / 10);
+    }
   }
 
   
@@ -663,10 +693,10 @@ function syncStickerDesignerFromInputs() {
     }
 
     if (!Array.isArray(st.stickerLayers) || !st.stickerLayers.length) {
-      st.stickerLayers = [{ mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1 }];
+      st.stickerLayers = [{ mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1, widthCm:10 }];
     }
     if (!st.stickerLayers[idx]) {
-      st.stickerLayers[idx] = { mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1 };
+      st.stickerLayers[idx] = { mode: "text", textRaw: "", textFlow: "single", text: "", font: "Inter", color: "#FFFFFF", imageUrl: "", isSvg:false, offsetX:0, offsetY:0, rotationDeg:0, scale:1, widthCm:10 };
     }
 
     const layer = st.stickerLayers[idx];
@@ -689,6 +719,9 @@ function syncStickerDesignerFromInputs() {
 
     layer.font = (document.getElementById("stFont") && document.getElementById("stFont").value) || layer.font || "Inter";
     layer.color = (document.getElementById("stMainColor") && document.getElementById("stMainColor").value) || layer.color || "#FFFFFF";
+    const lwEl = document.getElementById("stLayerWidth");
+    const lwVal = lwEl ? Number(lwEl.value || layer.widthCm || 10) : Number(layer.widthCm || 10);
+    layer.widthCm = isFinite(lwVal) ? Math.max(1, Math.min(200, lwVal)) : (layer.widthCm || 10);
 
     // Image rotation/scale (only when an uploaded SVG exists on this layer).
     const hasUpload = (layer.mode !== 'text') && !!layer.imageUrl;
@@ -701,8 +734,8 @@ function syncStickerDesignerFromInputs() {
       const sc = isFinite(scVal) ? scVal : 100;
       layer.scale = Math.max(0.2, Math.min(3.0, sc / 100));
     } else {
-      layer.rotationDeg = 0;
-      layer.scale = 1;
+      layer.rotationDeg = isFinite(Number(layer.rotationDeg)) ? Number(layer.rotationDeg) : 0;
+      layer.scale = isFinite(Number(layer.scale)) ? Number(layer.scale) : 1;
     }
 
 // Persist a compact layers payload into a hidden form field (for orders).
@@ -715,7 +748,10 @@ function syncStickerDesignerFromInputs() {
             font: l.font || "Inter",
             color: l.color || "#FFFFFF",
             hasImage: !!(l.imageUrl),
-            rotationDeg: isFinite(Number(l.rotationDeg)) ? Number(l.rotationDeg) : 0
+            assetId: l.assetId || "",
+            rotationDeg: isFinite(Number(l.rotationDeg)) ? Number(l.rotationDeg) : 0,
+            scale: isFinite(Number(l.scale)) ? Number(l.scale) : 1,
+            widthCm: isFinite(Number(l.widthCm)) ? Number(l.widthCm) : 10
           };
         }),
         hasBackground: _designerHasBackground()
@@ -745,6 +781,7 @@ function syncStickerDesignerFromInputs() {
     const fontSel = document.getElementById("stFont");
     const colorSel = document.getElementById("stMainColor");
     const finishSel = document.getElementById("stFinish");
+    const layerWidthEl = document.getElementById("stLayerWidth");
 
     const editingBackground = active === "background";
     // When editing background, hide sticker-layer controls (keeps UI disciplined).
@@ -793,6 +830,7 @@ function syncStickerDesignerFromInputs() {
     } catch(e) {}
     if (fontSel) fontSel.value = layer.font || "Inter";
     if (colorSel) colorSel.value = layer.color || (colorSel.value || "#FFFFFF");
+    if (layerWidthEl) layerWidthEl.value = String(isFinite(Number(layer.widthCm)) ? Number(layer.widthCm) : 10);
 
     // Show correct input (text vs upload vs assets)
     const m = (layer.mode || 'text');
@@ -807,7 +845,7 @@ function syncStickerDesignerFromInputs() {
     if (rotateWrap) rotateWrap.style.display = hasUpload ? '' : 'none';
     if (scaleWrap) scaleWrap.style.display = hasUpload ? '' : 'none';
     if (textInput) textInput.required = isText;
-    if (fileInput) fileInput.required = isUpload;
+    if (fileInput) fileInput.required = false;
 
     // Rotation/Scale UI sync
     if (hasUpload) {
@@ -821,7 +859,7 @@ function syncStickerDesignerFromInputs() {
     if (fileHint) {
       if (isUpload && layer.imageUrl) fileHint.textContent = "This layer has an uploaded file.";
       else if (isAssets && layer.imageUrl) fileHint.textContent = "This layer uses a library asset.";
-      else if (isUpload) fileHint.textContent = "High resolution recommended. Low quality files may be blocked.";
+      else if (isUpload) fileHint.textContent = "Only SVG / plain SVG files are accepted. Upload is available only before the design has active content.";
     }
   }
 
@@ -1036,7 +1074,8 @@ function syncStickerDesignerFromInputs() {
           offsetX: 0,
           offsetY: 0,
           rotationDeg: 0,
-          scale: 1
+          scale: 1,
+          widthCm: 10
         });
         st.activeKey = "sticker:" + (st.stickerLayers.length - 1);
         _renderLayerBar(false);
@@ -1079,8 +1118,18 @@ function syncStickerDesignerFromInputs() {
     _applyInputsFromActiveLayer();
   })();
 
-  // Designer mode: Text vs Upload (clean buttons)
-  
+
+  function _designerHasAnyWork(exceptIdx) {
+    const st = _ensureDesignerState();
+    const layers = Array.isArray(st.stickerLayers) ? st.stickerLayers : [];
+    return layers.some(function(l, i){
+      if (i === exceptIdx) return false;
+      const hasText = !!String((l && (l.textRaw || l.text)) || '').trim();
+      const hasImg = !!(l && l.imageUrl);
+      return hasText || hasImg;
+    }) || _designerHasBackground();
+  }
+
   // Designer mode: Text vs Upload vs Assets (clean buttons)
   (function initDesignerMode() {
     const wrap = document.getElementById("designerMode");
@@ -1093,7 +1142,19 @@ function syncStickerDesignerFromInputs() {
     if (!wrap || !hidden || !textWrap || !fileWrap) return;
 
     function setMode(mode) {
-      const m = (mode === 'assets' || mode === 'upload' || mode === 'text') ? mode : 'text';
+      let m = (mode === 'assets' || mode === 'upload' || mode === 'text') ? mode : 'text';
+      const stCheck = _ensureDesignerState();
+      const activeKeyCheck = stCheck.activeKey || 'sticker:0';
+      const activeIdxCheck = String(activeKeyCheck).startsWith('sticker:') ? Number(String(activeKeyCheck).split(':')[1] || 0) || 0 : 0;
+      const activeLayerCheck = stCheck.stickerLayers[activeIdxCheck];
+      if (m === 'upload') {
+        alert('Uploads accept only SVG / plain SVG files. Upload is available only before the design has active content.');
+      }
+      if (m === 'upload' && _designerHasAnyWork(activeIdxCheck) && !(activeLayerCheck && activeLayerCheck.imageUrl)) {
+        m = 'text';
+        const hint = document.getElementById('stFileHint');
+        if (hint) hint.textContent = 'Upload is disabled after a design is started. Start fresh to upload an SVG.';
+      }
       const isText = m === "text";
       const isUpload = m === 'upload';
       const isAssets = m === 'assets';
@@ -1112,7 +1173,7 @@ function syncStickerDesignerFromInputs() {
 
       // Required fields:
       if (textInput) textInput.required = isText;
-      if (fileInput) fileInput.required = isUpload;
+      if (fileInput) fileInput.required = false;
 
       wrap.querySelectorAll(".segBtn").forEach(function (b) {
         b.classList.toggle("active", b.getAttribute("data-mode") === m);
@@ -1168,15 +1229,25 @@ function syncStickerDesignerFromInputs() {
       }
     }
 
-    function addAssetToDesigner(item){
+    async function addAssetToDesigner(item){
       if (!item) return;
       try {
         syncStickerDesignerFromInputs();
         const st = _ensureDesignerState();
         const maxL = _maxStickerLayers();
-        if (st.stickerLayers.length >= maxL) return;
+        let svgText = '';
+        try { const rr = await fetch(item.svg); if (rr.ok) svgText = await rr.text(); } catch(e) {}
+        let targetIdx = -1;
+        const active = st.activeKey || 'sticker:0';
+        if (String(active).startsWith('sticker:')) {
+          const ai = Number(String(active).split(':')[1] || 0) || 0;
+          const al = st.stickerLayers[ai];
+          const empty = al && !String(al.textRaw || al.text || '').trim() && !al.imageUrl;
+          if (empty) targetIdx = ai;
+        }
+        if (targetIdx < 0 && st.stickerLayers.length >= maxL) return;
 
-        st.stickerLayers.push({
+        const newLayer = {
           mode: 'assets',
           assetId: item.id || '',
           textRaw: '',
@@ -1189,10 +1260,15 @@ function syncStickerDesignerFromInputs() {
           offsetX: 0,
           offsetY: 0,
           rotationDeg: 0,
-          scale: 1
-        });
+          scale: 1,
+          widthCm: 10,
+          svgText: svgText
+        };
+        if (targetIdx >= 0) st.stickerLayers[targetIdx] = newLayer;
+        else { st.stickerLayers.push(newLayer); targetIdx = st.stickerLayers.length - 1; }
 
-        st.activeKey = 'sticker:' + (st.stickerLayers.length - 1);
+        window.__ST_PREVIEW_WHITE_BG_PREF__ = false;
+        st.activeKey = 'sticker:' + targetIdx;
 
         // Switch UI to Assets mode for this layer.
         const hidden = document.getElementById('designMode');
@@ -1390,6 +1466,13 @@ function syncStickerDesignerFromInputs() {
     });
   })();
 
+  const stLayerWidth = document.getElementById("stLayerWidth");
+  if (stLayerWidth) {
+    stLayerWidth.addEventListener("input", function(){
+      try { syncStickerDesignerFromInputs(); updateStikeri(); _renderLayerBar(false); } catch(e) {}
+    });
+  }
+
   const stFile = document.getElementById("stFile");
   if (stFile) {
     stFile.addEventListener("change", function () {
@@ -1433,7 +1516,20 @@ function syncStickerDesignerFromInputs() {
         return;
       }
 
-      // Ensure the layer (and UI) is in upload mode so the preview renders the image.
+      const reader = new FileReader();
+      reader.onload = function(){
+        const svgText = String(reader.result || '').trim();
+        if (!/^<svg[\s>]/i.test(svgText.replace(/^<\?xml[^>]*>\s*/i, '').replace(/^<!doctype[^>]*>\s*/i, '')) || /<script[\s>]/i.test(svgText) || /on[a-z]+\s*=/i.test(svgText)) {
+          const hint = document.getElementById("stFileHint");
+          if (hint) {
+            hint.textContent = "Only plain, safe SVG files are accepted. Remove scripts/embedded events and try again.";
+            hint.classList.add('errorText');
+          }
+          stFile.value = "";
+          return;
+        }
+
+            // Ensure the layer (and UI) is in upload mode so the preview renders the image.
       try {
         layer.mode = 'upload';
         // Keep this layer active so the user immediately sees/edits it.
@@ -1484,6 +1580,7 @@ function syncStickerDesignerFromInputs() {
           try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
         }
         layer.imageUrl = url;
+        layer.svgText = svgText;
         layer.isSvg = true;
         // SVG artwork is usually best previewed on white.
         // Force White BG ON when an SVG is uploaded (user can toggle off).
@@ -1516,6 +1613,13 @@ function syncStickerDesignerFromInputs() {
         updateStikeri();
       };
       img.src = url;
+      };
+      reader.onerror = function(){
+        const hint = document.getElementById("stFileHint");
+        if (hint) hint.textContent = "Could not read SVG file.";
+        stFile.value = "";
+      };
+      reader.readAsText(file);
     });
   }
 

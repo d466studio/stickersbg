@@ -29,8 +29,8 @@
 
       // Home page
       home: {
-        title: "Design your sticker. Print it perfectly.",
-        description: "A clean, studio-grade sticker designer with <b>live preview</b> and strict print rules — so every order comes out right.",
+        title: "Create a sticker. We will create it perfectly.",
+        description: "A one-of-a-kind sticker designer with <b>live preview</b> — create it your own way.",
         betaNotice: "⚠️ Beta version: this website is currently under construction. Some features may change.",
         ctaDesign: "Start designing",
         ctaShop: "Browse stickers",
@@ -57,7 +57,7 @@
       // Designer
       design: {
         title: "DESIGN",
-        description: "A clean sticker designer with live preview and studio-safe limits.",
+        description: "Web designer with live preview, sizes, colors, quantities.... Our Photoshop for Stickers :)",
         betaNotice: "⚠️ Beta designer: orders are not accepted through the website yet. Use it for visual representation and price estimation only.",
         orderTitle: "Design your sticker",
         modeText: "Text",
@@ -210,7 +210,7 @@
       about: {
         title: "ABOUT",
         description: "Contact us for custom sticker projects, branding and vinyl work.",
-        whoWeAre: "Who we are",
+        whoWeAre: "Who are we? The idea for the first-of-its-kind Sticker Studio.",
         whoWeAreText: "<b>stickers.studio</b> — minimalist studio for custom vinyl stickers, decals and branding. We focus on clean design, precise production and clear communication.",
         contact: "Contact",
         instagram: "Instagram:",
@@ -316,8 +316,8 @@
 
       // Home page
       home: {
-        title: "Създай стикер. Отпечатай го перфектно.",
-        description: "Изчистен стикер дизайнер с <b>live preview</b> и строги правила за печат — за да изглежда всеки стикер добре.",
+        title: "Създай стикер. Ние ще го създадем перфектно.",
+        description: "Единствен по рода си стикер дизайнер с <b>live preview</b> — създай по собствен вкус.",
         betaNotice: "⚠️ Beta версия: сайтът в момента е в процес на разработка. Някои функции може да се променят.",
         ctaDesign: "Започни дизайн",
         ctaShop: "Разгледай стикери",
@@ -343,7 +343,7 @@
 
       design: {
         title: "ДИЗАЙН",
-        description: "Изчистен дизайнер с live preview и ограничения за качествен печат.",
+        description: "Уеб дизайнер с live preview, размери, цветове, бройки.... Нашият фотошоп за Стикери :)",
         betaNotice: "⚠️ Beta дизайнер: в момента сайтът не приема поръчки. Може да се използва само за визуална представа и ориентировъчна цена.",
         orderTitle: "Създай своя стикер",
         modeText: "Текст",
@@ -496,8 +496,8 @@
       about: {
         title: "ЗА НАС",
         description: "Свържете се с нас за персонализирани стикери, брандиране и винилни проекти.",
-        whoWeAre: "Кои сме",
-        whoWeAreText: "<b>stickers.studio</b> — минималистично студио за персонализирани винилни стикери, декали и брандиране. Фокусът ни е върху чист дизайн, прецизна изработка и ясна комуникация.",
+        whoWeAre: "Кои сме? Идеята за първото по рода си Стикер Студио.",
+        whoWeAreText: "<b>stickers.studio</b> — Първият по рода си бранд - студио за персонализирани винилни стикери, декали и брандиране. Фокусът ни е върху чист дизайн, прецизна изработка и ясна комуникация за вашия дизайн. Нашите дизайнери могат да създадат всяка идея, която имате, във стикер. Но това не е достатъчно. Решихме да създадем този първи по рода си Уеб дизайнер, защото когато става въпрос за продукт, изцяло вдъхновен от въображението на клиентите, най-важното е да бъде визуализирана идеята, преди изпълнението.",
         contact: "Контакт",
         instagram: "Instagram:",
         phone: "Телефон:",

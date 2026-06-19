@@ -565,8 +565,9 @@ function updateStikeri() {
       state.stickerLayers[idx].textFlow = (flow === "words") ? "words" : "single";
       state.stickerLayers[idx].text = renderedText; // compatibility
     } else {
-      state.stickerLayers[idx].mode = "upload";
-      // keep textRaw/textFlow as-is; upload layer ignores text
+      // Preserve exact non-text mode: upload or assets.
+      state.stickerLayers[idx].mode = (mode === "assets") ? "assets" : "upload";
+      // keep textRaw/textFlow as-is; image layers ignore text
     }
   }
 
@@ -580,7 +581,7 @@ function updateStikeri() {
       : [{ mode: mode, textRaw: rawText, textFlow: (flow==="words"?"words":"single"), text: renderedText, font: font, color: mainColor, imageUrl: ($("stThumb") && $("stThumb").src) || "" }];
 
     const activeKey = state ? state.activeKey : "sticker:0";
-    const fontSizePx = Math.max(18, Math.min(64, width * 3.6));
+    const baseFontSizePx = Math.max(18, Math.min(64, width * 3.6));
 
     stickerLayers.forEach(function (layer, idx) {
       const key = "sticker:" + idx;
@@ -605,9 +606,12 @@ function updateStikeri() {
         img.alt = "layer";
         img.src = layer.imageUrl;
         img.className = "layerElImg";
+        const layerW = isFinite(Number(layer && layer.widthCm)) ? Number(layer.widthCm) : width;
+        img.style.width = Math.max(40, Math.min(900, layerW * 12)) + "px";
         // Curated assets should default to white (monochrome) for best contrast.
         try {
           const isAsset = ((layer && layer.mode) === "assets") || !!(layer && layer.assetId);
+          // Curated assets are usually black SVGs; make them visible on the dark designer preview.
           if (layer && layer.isSvg && isAsset) img.classList.add("assetWhite");
         } catch(e) {}
         // Per-layer transform (translation + rotation) is applied on the wrapper element (el).
@@ -620,7 +624,8 @@ function updateStikeri() {
           tEl.textContent = txt;
           tEl.style.fontFamily = ((layer && layer.font) || font) + ", Roboto, Inter, Arial, Helvetica, sans-serif";
           tEl.style.color = (layer && layer.color) || mainColor;
-          tEl.style.fontSize = fontSizePx + "px";
+          const layerW = isFinite(Number(layer && layer.widthCm)) ? Number(layer.widthCm) : width;
+          tEl.style.fontSize = Math.max(12, Math.min(96, layerW * 3.6)) + "px";
           // Text-flow behavior:
           // - single: never wrap; allow horizontal scroll in preview
           // - words: allow line breaks (one word per line)
@@ -774,6 +779,7 @@ function updateStikeri() {
               parts.push([
                 idx,
                 hasImg ? ('img:' + String(layer.imageUrl)) : ('txt:' + t),
+                'w:' + (isFinite(Number(layer.widthCm)) ? Number(layer.widthCm) : ''),
                 'h:' + h,
                 'f:' + font,
                 'b:' + (bold?1:0),
@@ -1157,6 +1163,7 @@ function updateDynamicTranslations() {
   }
 }
 
-// Expose function globally
+// Expose functions globally
+window.stApplyTextRules = stApplyTextRules;
 window.updateDynamicTranslations = updateDynamicTranslations;
 

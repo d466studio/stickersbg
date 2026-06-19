@@ -1096,3 +1096,74 @@ input:focus, textarea:focus, select:focus{
   border-radius: 14px;
   opacity: 0.8;
 }
+
+/* Final mobile + about/contact polish */
+.aboutCard{
+  position:relative;
+  overflow:hidden;
+  border-color:rgba(139,92,246,.28);
+  background:
+    linear-gradient(135deg, rgba(139,92,246,.16), rgba(255,255,255,.035) 42%, rgba(168,85,247,.10));
+}
+.aboutCard::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(520px 220px at 10% 0%, rgba(139,92,246,.22), transparent 60%);
+}
+.aboutCardViolet{
+  background:
+    linear-gradient(135deg, rgba(168,85,247,.18), rgba(255,255,255,.035) 46%, rgba(139,92,246,.12));
+}
+.aboutCard > *{position:relative; z-index:1}
+.contactLink{color:var(--text); text-decoration:none; font-weight:800}
+.contactLink:hover{color:var(--accent); text-decoration:underline; text-underline-offset:4px}
+
+@media (max-width: 760px){
+  body{overflow-x:hidden}
+  .topbar{
+    position:sticky;
+    align-items:flex-start;
+    gap:10px;
+    padding:10px 12px;
+    flex-wrap:wrap;
+  }
+  .brand{min-width:0; flex:1 1 auto}
+  .brandLogo{width:42px; height:42px}
+  .brandName{font-size:15px}
+  .brandTag{font-size:11px}
+  .langSwitcher{margin-left:0}
+  .nav{
+    order:3;
+    flex:1 0 100%;
+    justify-content:flex-start;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    gap:8px;
+    padding:6px 0 2px;
+    scrollbar-width:none;
+  }
+  .nav::-webkit-scrollbar{display:none}
+  .navLink{font-size:12px; padding:9px 10px; white-space:nowrap}
+  .container{padding:22px 14px 128px}
+  .hero{gap:14px}
+  .heroText h1{font-size:34px; line-height:1.05}
+  .heroText p{font-size:15px; line-height:1.5}
+  .heroCard{min-width:0}
+  .mockPhoto{min-height:220px}
+  .grid2{gap:12px}
+  .card{padding:16px}
+  .ctaRow .btn{flex:1 1 100%; justify-content:center; text-align:center}
+  .chips{gap:8px}
+  .chip{font-size:12px}
+  .dock{padding:0 8px 8px}
+  .dockInner{max-height:34vh; overflow:auto}
+}
+
+@media (max-width: 420px){
+  .heroText h1{font-size:30px}
+  .pageHead h1{font-size:28px}
+  .brandTag{display:none}
+  .langBtn{width:30px;height:22px}
+}

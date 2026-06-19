@@ -13,7 +13,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Manrope:wght@400;600;700&family=Urbanist:wght@400;600;700&family=Figtree:wght@400;600;700&family=Work+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&family=Rubik:wght@400;600;700&family=Kanit:wght@400;600;700&family=Fjalla+One&family=Abril+Fatface&family=Bangers&family=Satisfy&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Merriweather:wght@400;700&family=Pacifico&family=Lobster&family=Comfortaa:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;700&family=Racing+Sans+One&family=Black+Ops+One&family=Teko:wght@400;600;700&family=Staatliches&family=Saira+Condensed:wght@400;600;700&family=Graduate&family=Audiowide&family=Oxanium:wght@400;600;700&family=Monoton&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Arial&family=Roboto:wght@400;700&family=Oswald:wght@400;600&family=Montserrat:wght@400;700&family=Russo+One&family=PT+Sans:wght@400;700&family=Exo+2:wght@400;700&family=Inter:wght@400;600;700&family=Space+Grotesk:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Manrope:wght@400;600;700&family=Urbanist:wght@400;600;700&family=Figtree:wght@400;600;700&family=Work+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&family=Poppins:wght@400;600;700&family=Raleway:wght@400;600;700&family=Nunito:wght@400;600;700&family=Rubik:wght@400;600;700&family=Kanit:wght@400;600;700&family=Fjalla+One&family=Abril+Fatface&family=Bangers&family=Satisfy&family=Bebas+Neue&family=Anton&family=Barlow+Condensed:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Merriweather:wght@400;700&family=Pacifico&family=Lobster&family=Comfortaa:wght@400;600;700&family=Cinzel:wght@400;600;700&family=Orbitron:wght@400;600;700&family=Racing+Sans+One&family=Black+Ops+One&family=Teko:wght@400;600;700&family=Staatliches&family=Saira+Condensed:wght@400;600;700&family=Graduate&family=Audiowide&family=Oxanium:wght@400;600;700&family=Monoton&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -49,7 +49,6 @@
       <a href="#assets" data-route="assets" class="navLink" data-i18n="nav.assets">ASSETS</a>
       <a href="#projects" data-route="projects" class="navLink" data-i18n="nav.projects">PROJECTS</a>
       <a href="#shop" data-route="shop" class="navLink" data-i18n="nav.shop">SHOP</a>
-      <a href="#galeria" data-route="galeria" class="navLink" data-i18n="nav.galeria">GALLERY</a>
       <a href="#za-nas" data-route="za-nas" class="navLink" data-i18n="nav.za-nas">ABOUT</a>
     </nav>
 
@@ -78,14 +77,12 @@
           <div class="chips">
             <span class="chip" data-i18n="home.chips.preview">Live preview</span>
             <span class="chip" data-i18n="home.chips.rules">Print-safe rules</span>
-            <span class="chip" data-i18n="home.chips.minimal">Minimal, premium</span>
           </div>
         </div>
 
         <div class="heroCard">
           <div class="heroCardTop">
             <div class="badge">stickers.studio</div>
-            <div class="badge badgeYellow">PURPLE</div>
           </div>
           <div class="heroCardBody">
             <div class="mockPhoto">
@@ -123,32 +120,6 @@
       </div>
     </section>
 
-    <!-- GALLERY -->
-    <section class="page" id="page-galeria" data-page="galeria">
-      <div class="pageHead">
-        <h1 data-i18n="gallery.title">GALLERY</h1>
-        <p class="muted" data-i18n="gallery.description">A selection of finished projects and custom sticker work.</p>
-      </div>
-
-      <div class="card">
-        <div class="galleryTop">
-          <div>
-            <h2 data-i18n="gallery.projects">Projects</h2>
-            <p class="muted small" data-i18n="gallery.filterByTag">Filter by tag</p>
-          </div>
-
-          <div class="inline">
-            <span class="muted small" data-i18n="gallery.tag">Tag:</span>
-            <select id="galleryTag" class="selectCompact">
-              <option value="all" data-i18n="gallery.all">All</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="galleryGrid" id="galleryGrid"></div>
-        <p class="muted small" id="galleryHint"></p>
-      </div>
-    </section>
     <section class="page" id="page-assets" data-page="assets">
       <div class="assetsPageWrap">
         <div class="assetsPageHeader">
@@ -409,6 +380,7 @@
           </div>
 
           <form class="form" id="formStikeri">
+            <input type="hidden" name="orderEmail" value="pavel_kolarov@yahoo.com" />
             <input type="hidden" name="layers" id="stLayersData" value="" />
             <label id="stTextWrap">
               <span data-i18n="design.form.text">Text</span>
@@ -425,7 +397,7 @@
             <label id="stFileWrap" style="display:none">
               <span data-i18n="design.form.upload">Upload artwork</span>
               <input type="file" name="file" id="stFile" accept=".svg,image/svg+xml" />
-              <p class="muted small" id="stFileHint" data-i18n="design.form.uploadHint">High resolution recommended. Low quality files may be blocked.</p>
+              <p class="muted small" id="stFileHint" data-i18n="design.form.uploadHint">Only plain SVG files are accepted. Upload is available only before the design has active content.</p>
             </label>
 
 
@@ -462,10 +434,18 @@
 
             <div class="row2">
               <label>
-                <span data-i18n="design.form.size">Size (width, cm)</span>
-                <input type="number" name="widthCm" id="stWidth" min="5" max="60" value="10" required />
-                <p class="muted small" id="stSizeHint"></p>
+                <span>Общ размер / Whole sticker width (cm)</span>
+                <input type="number" name="widthCm" id="stWidth" min="5" max="200" value="10" required />
+                <p class="muted small" id="stSizeHint">Общ размер — променя всички слоеве заедно.</p>
               </label>
+              <label>
+                <span>Current layer width (cm)</span>
+                <input type="number" name="layerWidthCm" id="stLayerWidth" min="1" max="200" value="10" required />
+                <p class="muted small">Size for selected layer only / размер само за текущия слой.</p>
+              </label>
+            </div>
+
+            <div class="row2">
               <label>
                 <span data-i18n="design.form.quantity">Quantity</span>
                 <div class="qtyBlock">
@@ -482,6 +462,20 @@
                   <select name="font" id="stFont" class="jsCustomSelect" required>
                     <optgroup label="Studio" data-i18n-label="common.studio">
                       <option value="Inter" selected>Inter</option>
+                      <option value="Arial">Arial</option>
+                      <option value="Helvetica">Helvetica</option>
+                      <option value="Verdana">Verdana</option>
+                      <option value="Tahoma">Tahoma</option>
+                      <option value="Trebuchet MS">Trebuchet MS</option>
+                      <option value="Georgia">Georgia</option>
+                      <option value="Times New Roman">Times New Roman</option>
+                      <option value="Impact">Impact</option>
+                      <option value="Courier New">Courier New</option>
+                      <option value="Montserrat">Montserrat</option>
+                      <option value="Poppins">Poppins</option>
+                      <option value="Raleway">Raleway</option>
+                      <option value="Nunito">Nunito</option>
+                      <option value="Rubik">Rubik</option>
                       <option value="Space Grotesk">Space Grotesk</option>
                       <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
                       <option value="DM Sans">DM Sans</option>
@@ -774,8 +768,8 @@
         <p class="muted" data-i18n="about.description">Contacts and brief description.</p>
       </div>
 
-      <div class="grid2">
-        <div class="card">
+      <div class="grid2 aboutGrid">
+        <div class="card aboutCard aboutCardPurple">
           <h2 data-i18n="about.whoWeAre">Who we are</h2>
           <p data-i18n="about.whoWeAreText">
             <b>BG STICKERS</b> — studio for vinyl text and auto decals, focus on clean results and clear options.
@@ -783,10 +777,10 @@
           </p>
         </div>
 
-        <div class="card">
+        <div class="card aboutCard aboutCardViolet">
           <h2 data-i18n="about.contact">Contact</h2>
           <div class="contactList">
-            <div><span class="k" data-i18n="about.instagram">Instagram:</span> <span class="v">@stickers.studio.bg</span></div>
+            <div><span class="k" data-i18n="about.instagram">Instagram:</span> <span class="v"><a class="contactLink" href="https://www.instagram.com/stickers.studio.bg/" target="_blank" rel="noopener">@stickers.studio.bg</a></span></div>
             <div><span class="k" data-i18n="about.phone">Phone:</span> <span class="v">+359 88 220 3297 <span class="muted small" data-i18n="about.workHours">(during work hours only)</span></span></div>
           </div>
         </div>
