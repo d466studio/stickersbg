@@ -120,9 +120,7 @@ async function buildDesignerSvgText() {
   try {
     const st = window.ST_DESIGN_STATE || null;
     if (!st || !Array.isArray(st.stickerLayers)) return null;
-    const wholeW = Number((document.getElementById("stWidth") && document.getElementById("stWidth").value) || 10);
-    const pxW = Math.max(400, Math.min(2400, (isFinite(wholeW) ? wholeW : 10) * 30));
-    const pxH = Math.round(pxW * 0.62);
+
     const esc = function(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(m){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[m]; }); };
     const toDataUrl = function(txt){
       try { return 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(String(txt || '')))); }
@@ -134,48 +132,110 @@ async function buildDesignerSvgText() {
       const u = String(l.imageUrl || '');
       if (!u) return '';
       if (/^data:/i.test(u)) return u;
-      if (/^blob:/i.test(u)) return '';
+      if (/^blob:/i.test(u)) return ''; // browser-local blobs cannot be fetched after submit in email clients
       try { const r = await fetch(u); if (r.ok) return toDataUrl(await r.text()); } catch(e) {}
       return u;
     };
     const applyRules = window.stApplyTextRules || function(raw){ return String(raw || ''); };
+
+    // Export in the SAME coordinate system as the live designer: center = 0,0.
+    // Then build a tight viewBox around the actual content so the sent SVG is centered,
+    // visible, and not shifted bottom-right in email/preview clients.
     const bg = (document.getElementById("stBackground") && document.getElementById("stBackground").value) || "none";
     const bgColor = (document.getElementById("stBgColor") && document.getElementById("stBgColor").value) || "#ffffff";
-    let body = '';
-    if (bg !== 'none') {
-      const bw = pxW * (Number((document.getElementById("stBgScaleX") && document.getElementById("stBgScaleX").value) || 110) / 140);
-      const bh = pxH * (Number((document.getElementById("stBgScaleY") && document.getElementById("stBgScaleY").value) || 110) / 160);
-      const x = (pxW - bw) / 2, y = (pxH - bh) / 2;
-      if (bg === 'circle') body += '<ellipse cx="'+(pxW/2)+'" cy="'+(pxH/2)+'" rx="'+(Math.min(bw,bh)/2)+'" ry="'+(Math.min(bw,bh)/2)+'" fill="'+esc(bgColor)+'"/>';
-      else body += '<rect x="'+x+'" y="'+y+'" width="'+bw+'" height="'+bh+'" rx="'+(bg.indexOf('rounded')>=0?28:0)+'" fill="'+esc(bgColor)+'"/>';
+    const bgScaleX = Math.max(70, Math.min(160, Number((document.getElementById("stBgScaleX") && document.getElementById("stBgScaleX").value) || 110))) / 100;
+    const bgScaleY = Math.max(70, Math.min(160, Number((document.getElementById("stBgScaleY") && document.getElementById("stBgScaleY").value) || 110))) / 100;
+
+    function addRotatedBox(bounds, cx, cy, w, h, rotDeg, sc){
+      w = Math.max(1, Number(w)||1); h = Math.max(1, Number(h)||1); sc = Number(sc)||1;
+      const a = (Number(rotDeg)||0) * Math.PI / 180;
+      const cos = Math.abs(Math.cos(a)), sin = Math.abs(Math.sin(a));
+      const bw = (w * cos + h * sin) * sc;
+      const bh = (w * sin + h * cos) * sc;
+      bounds.minX = Math.min(bounds.minX, cx - bw/2);
+      bounds.maxX = Math.max(bounds.maxX, cx + bw/2);
+      bounds.minY = Math.min(bounds.minY, cy - bh/2);
+      bounds.maxY = Math.max(bounds.maxY, cy + bh/2);
     }
+    function svgRatio(txt){
+      try {
+        const vb = String(txt||'').match(/viewBox\s*=\s*["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*["']/i);
+        if (vb && Number(vb[1]) > 0 && Number(vb[2]) > 0) return Number(vb[2]) / Number(vb[1]);
+        const wm = String(txt||'').match(/\swidth\s*=\s*["']\s*([\d.]+)/i);
+        const hm = String(txt||'').match(/\sheight\s*=\s*["']\s*([\d.]+)/i);
+        if (wm && hm && Number(wm[1]) > 0 && Number(hm[1]) > 0) return Number(hm[1]) / Number(wm[1]);
+      } catch(e) {}
+      return 0.5;
+    }
+
+    const elements = [];
+    const bounds = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
+
+    // Background first. Use the same stable auto-fit values saved by editor.js when available.
+    if (bg !== 'none') {
+      let bw = isFinite(Number(st._bgBaseW)) ? Number(st._bgBaseW) : (bg === 'circle' || bg === 'square' || bg === 'rounded-square' ? 300 : 420);
+      let bh = isFinite(Number(st._bgBaseH)) ? Number(st._bgBaseH) : (bg === 'circle' || bg === 'square' || bg === 'rounded-square' ? 300 : 240);
+      bw *= bgScaleX; bh *= bgScaleY;
+      if (bg === 'circle' || bg === 'square' || bg === 'rounded-square') { const ss = Math.max(bw, bh); bw = ss; bh = ss; }
+      bounds.minX = Math.min(bounds.minX, -bw/2); bounds.maxX = Math.max(bounds.maxX, bw/2);
+      bounds.minY = Math.min(bounds.minY, -bh/2); bounds.maxY = Math.max(bounds.maxY, bh/2);
+      elements.push({type:'bg', bg, bgColor, w:bw, h:bh});
+    }
+
     for (let i = 0; i < st.stickerLayers.length; i++) {
-      const l = st.stickerLayers[i];
-      const cx = pxW/2 + (Number(l.offsetX)||0), cy = pxH/2 + (Number(l.offsetY)||0);
+      const l = st.stickerLayers[i] || {};
+      const cx = Number(l.offsetX)||0, cy = Number(l.offsetY)||0;
       const rot = Number(l.rotationDeg)||0, sc = Number(l.scale)||1;
       const layerW = Math.max(40, Math.min(900, (Number(l.widthCm)||10) * 12));
-      body += '<g transform="translate('+cx+' '+cy+') rotate('+rot+') scale('+sc+')">';
       if (l.imageUrl) {
+        const ratio = svgRatio(l.svgText);
+        const iw = layerW, ih = Math.max(20, Math.min(900, layerW * ratio));
         const href = await getSvgHref(l);
-        body += '<image href="'+esc(href)+'" x="'+(-layerW/2)+'" y="'+(-layerW/4)+'" width="'+layerW+'" height="'+(layerW/2)+'" preserveAspectRatio="xMidYMid meet"/>';
+        addRotatedBox(bounds, cx, cy, iw, ih, rot, sc);
+        elements.push({type:'image', href, cx, cy, rot, sc, w:iw, h:ih});
       } else {
         const txt = applyRules((l.textRaw != null ? l.textRaw : l.text) || '', l.textFlow || 'single');
         if (String(txt).trim()) {
           const lines = String(txt).split(/\r?\n/);
           const fontSize = Math.max(12, Math.min(96, (Number(l.widthCm)||10) * 3.6));
-          const y0 = -((lines.length-1) * fontSize * 0.55);
-          lines.forEach(function(line, n){
-            body += '<text x="0" y="'+(y0+n*fontSize*1.08)+'" dominant-baseline="middle" text-anchor="middle" font-family="'+esc(l.font||'Inter')+'" font-size="'+fontSize+'" font-weight="800" fill="'+esc(l.color||'#ffffff')+'">'+esc(line)+'</text>';
-          });
+          const maxChars = Math.max.apply(null, lines.map(function(x){ return String(x).length; }).concat([1]));
+          const tw = Math.max(24, maxChars * fontSize * 0.68);
+          const th = Math.max(fontSize, lines.length * fontSize * 1.08);
+          addRotatedBox(bounds, cx, cy, tw, th, rot, sc);
+          elements.push({type:'text', txt, lines, cx, cy, rot, sc, font:l.font||'Inter', color:l.color||'#ffffff', fontSize, h:th});
         }
       }
-      body += '</g>';
     }
-    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+pxW+'" height="'+pxH+'" viewBox="0 0 '+pxW+' '+pxH+'">'+body+'</svg>';
+
+    if (!isFinite(bounds.minX) || !isFinite(bounds.minY)) return null;
+    const pad = 80;
+    const minX = Math.floor(bounds.minX - pad), minY = Math.floor(bounds.minY - pad);
+    const vbW = Math.ceil((bounds.maxX - bounds.minX) + pad*2);
+    const vbH = Math.ceil((bounds.maxY - bounds.minY) + pad*2);
+    let body = '';
+
+    elements.forEach(function(el){
+      if (el.type === 'bg') {
+        if (el.bg === 'circle') body += '<ellipse cx="0" cy="0" rx="'+(el.w/2)+'" ry="'+(el.h/2)+'" fill="'+esc(el.bgColor)+'"/>';
+        else body += '<rect x="'+(-el.w/2)+'" y="'+(-el.h/2)+'" width="'+el.w+'" height="'+el.h+'" rx="'+(String(el.bg).indexOf('rounded')>=0?28:0)+'" fill="'+esc(el.bgColor)+'"/>';
+      } else if (el.type === 'image') {
+        body += '<g transform="translate('+el.cx+' '+el.cy+') rotate('+el.rot+') scale('+el.sc+')">';
+        body += '<image href="'+esc(el.href)+'" x="'+(-el.w/2)+'" y="'+(-el.h/2)+'" width="'+el.w+'" height="'+el.h+'" preserveAspectRatio="xMidYMid meet"/>';
+        body += '</g>';
+      } else if (el.type === 'text') {
+        body += '<g transform="translate('+el.cx+' '+el.cy+') rotate('+el.rot+') scale('+el.sc+')">';
+        const y0 = -((el.lines.length-1) * el.fontSize * 0.54);
+        el.lines.forEach(function(line, n){
+          body += '<text x="0" y="'+(y0+n*el.fontSize*1.08)+'" dominant-baseline="middle" text-anchor="middle" font-family="'+esc(el.font)+'" font-size="'+el.fontSize+'" font-weight="800" letter-spacing=".03em" fill="'+esc(el.color)+'">'+esc(String(line).toUpperCase())+'</text>';
+        });
+        body += '</g>';
+      }
+    });
+
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+vbW+'" height="'+vbH+'" viewBox="'+minX+' '+minY+' '+vbW+' '+vbH+'" preserveAspectRatio="xMidYMid meet">'+body+'</svg>';
     return svg;
   } catch(e) { return null; }
 }
-
 async function buildDesignerSvgFile() {
   const svg = await buildDesignerSvgText();
   if (!svg) return null;
