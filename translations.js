@@ -58,7 +58,7 @@
       design: {
         title: "DESIGN",
         description: "Web designer with live preview, sizes, colors, quantities.... Our Photoshop for Stickers :)",
-        betaNotice: "⚠️ Beta designer: orders are not accepted through the website yet. Use it for visual representation and price estimation only.",
+        betaNotice: "⚠️ Beta designer: Some functions may not work as intented!",
         orderTitle: "Design your sticker",
         modeText: "Text",
         modeUpload: "Upload",
@@ -344,7 +344,7 @@
       design: {
         title: "ДИЗАЙН",
         description: "Уеб дизайнер с live preview, размери, цветове, бройки.... Нашият фотошоп за Стикери :)",
-        betaNotice: "⚠️ Beta дизайнер: в момента сайтът не приема поръчки. Може да се използва само за визуална представа и ориентировъчна цена.",
+        betaNotice: "⚠️ Beta дизайнер: Някои функционалности може да не работят правилно!",
         orderTitle: "Създай своя стикер",
         modeText: "Текст",
         modeUpload: "Качи файл",
