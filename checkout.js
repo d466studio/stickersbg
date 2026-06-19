@@ -76,9 +76,9 @@ function buildStikeriSummary() {
         return "Layer " + (i+1) + ": " +
           "mode=" + (l.mode || "text") +
           ", text=" + (l.mode === "text" ? JSON.stringify(l.textRaw || l.text || "") : "-") +
-          ", asset=" + (l.assetId || "-") +
           ", font=" + (l.font || "-") +
           ", color=" + (l.color || "-") +
+          ", finish=" + ((l.finish === "glossy") ? "glossy" : "matte") + (l.customFinish ? " (layer override)" : " (global)") +
           ", layerWidthCm=" + (isFinite(Number(l.widthCm)) ? Number(l.widthCm) : "-") +
           ", rotation=" + (isFinite(Number(l.rotationDeg)) ? Number(l.rotationDeg) : 0) + "deg" +
           ", scale=" + (isFinite(Number(l.scale)) ? Number(l.scale) : 1);
@@ -188,13 +188,36 @@ async function postForm(formEl, hintEl, extra) {
       ".";
     return;
   }
+  // Basic anti-spam / email confirmation for static hosting.
+  if (formEl && formEl.id === "formStikeri") {
+    const trap = document.getElementById("stWebsiteTrap");
+    if (trap && String(trap.value || "").trim()) {
+      hintEl.textContent = "❌ Spam check failed.";
+      return;
+    }
+    const em = document.getElementById("stCustomerEmail");
+    const em2 = document.getElementById("stCustomerEmailConfirm");
+    const a = String((em && em.value) || "").trim().toLowerCase();
+    const b = String((em2 && em2.value) || "").trim().toLowerCase();
+    if (!a || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a)) {
+      hintEl.textContent = "❌ Please enter a valid email address.";
+      return;
+    }
+    if (a !== b) {
+      hintEl.textContent = "❌ Email verification failed: both emails must match.";
+      return;
+    }
+  }
+
   hintEl.textContent = t("common.sending") || "Sending...";
   const fd = new FormData(formEl);
   Object.entries(extra || {}).forEach(function (entry) {
     fd.append(entry[0], entry[1]);
   });
   fd.append("_subject", "New stickers.studio order");
-  fd.append("_captcha", "false");
+  fd.append("_captcha", "true");
+  const replyTo = fd.get("customer_email");
+  if (replyTo) fd.append("_replyto", replyTo);
   if (formEl && formEl.id === "formStikeri") {
     fd.append("order_summary", buildStikeriSummary());
     fd.append("designer_settings_text", buildStikeriSummary());

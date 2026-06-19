@@ -510,11 +510,19 @@ window.addEventListener("DOMContentLoaded", async function () {
     npExtra.addEventListener("change", updateNadpisi);
   }
 
-  ["stText", "stTextFlow", "stWidth", "stFont", "stMainColor", "stBackground", "stFinish", "stQty", "stBgColor", "stBgScaleX", "stBgScaleY", "stBgFinish", "stImgRotate", "stImgScale"].forEach(function (id) {
+  ["stText", "stTextFlow", "stWidth", "stFont", "stMainColor", "stBackground", "stFinish", "stLayerFinish", "stQty", "stBgColor", "stBgScaleX", "stBgScaleY", "stBgFinish", "stImgRotate", "stImgScale"].forEach(function (id) {
     const el = document.getElementById(id);
     if (!el) return;
     function handle(){
       if (id === "stWidth" && typeof _scaleAllStickerLayersToWholeWidth === "function") _scaleAllStickerLayersToWholeWidth(el.value);
+      if (id === "stFinish") {
+        try {
+          const st = _ensureDesignerState();
+          (st.stickerLayers || []).forEach(function(layer){ layer.finish = el.value || "matte"; layer.customFinish = false; });
+          const lf = document.getElementById("stLayerFinish");
+          if (lf) lf.value = el.value || "matte";
+        } catch(e) {}
+      }
       syncStickerDesignerFromInputs();
       updateStikeri();
       if (id === "stWidth" && typeof _applyInputsFromActiveLayer === "function") _applyInputsFromActiveLayer();
@@ -625,7 +633,9 @@ window.addEventListener("DOMContentLoaded", async function () {
           offsetY: 0,
           rotationDeg: 0,
           scale: 1,
-          widthCm: 10
+          widthCm: 10,
+          finish: (document.getElementById("stFinish") && document.getElementById("stFinish").value) || "matte",
+          customFinish: false
         }
       ]
     };
@@ -722,6 +732,13 @@ function syncStickerDesignerFromInputs() {
     const lwEl = document.getElementById("stLayerWidth");
     const lwVal = lwEl ? Number(lwEl.value || layer.widthCm || 10) : Number(layer.widthCm || 10);
     layer.widthCm = isFinite(lwVal) ? Math.max(1, Math.min(200, lwVal)) : (layer.widthCm || 10);
+    const lfEl = document.getElementById("stLayerFinish");
+    const globalFinish = (document.getElementById("stFinish") && document.getElementById("stFinish").value) || "matte";
+    if (!layer.finish) layer.finish = globalFinish;
+    if (lfEl) {
+      layer.finish = (lfEl.value === "glossy") ? "glossy" : "matte";
+      layer.customFinish = layer.finish !== globalFinish;
+    }
 
     // Image rotation/scale (only when an uploaded SVG exists on this layer).
     const hasUpload = (layer.mode !== 'text') && !!layer.imageUrl;
@@ -781,6 +798,7 @@ function syncStickerDesignerFromInputs() {
     const fontSel = document.getElementById("stFont");
     const colorSel = document.getElementById("stMainColor");
     const finishSel = document.getElementById("stFinish");
+    const layerFinishSel = document.getElementById("stLayerFinish");
     const layerWidthEl = document.getElementById("stLayerWidth");
 
     const editingBackground = active === "background";
@@ -798,6 +816,7 @@ function syncStickerDesignerFromInputs() {
     _setWrapVisible(fontSel, !editingBackground);
     _setWrapVisible(colorSel, !editingBackground);
     _setWrapVisible(finishSel, !editingBackground);
+    _setWrapVisible(layerFinishSel, !editingBackground);
 
     // Background option block is controlled by updateStikeri() based on stBackground.
 
@@ -830,16 +849,16 @@ function syncStickerDesignerFromInputs() {
     } catch(e) {}
     if (fontSel) fontSel.value = layer.font || "Inter";
     if (colorSel) colorSel.value = layer.color || (colorSel.value || "#FFFFFF");
+    if (layerFinishSel) layerFinishSel.value = (layer.finish === "glossy") ? "glossy" : "matte";
     if (layerWidthEl) layerWidthEl.value = String(isFinite(Number(layer.widthCm)) ? Number(layer.widthCm) : 10);
 
     // Show correct input (text vs upload vs assets)
     const m = (layer.mode || 'text');
     const isText = m === 'text';
     const isUpload = m === 'upload';
-    const isAssets = m === 'assets';
     if (textWrap) textWrap.style.display = isText ? '' : 'none';
     if (fileWrap) fileWrap.style.display = isUpload ? '' : 'none';
-    if (assetsWrap) assetsWrap.style.display = isAssets ? '' : 'none';
+    if (assetsWrap) assetsWrap.style.display = 'none';
 
     const hasUpload = (!isText) && !!(layer && layer.imageUrl);
     if (rotateWrap) rotateWrap.style.display = hasUpload ? '' : 'none';
@@ -858,7 +877,6 @@ function syncStickerDesignerFromInputs() {
     const fileHint = document.getElementById("stFileHint");
     if (fileHint) {
       if (isUpload && layer.imageUrl) fileHint.textContent = "This layer has an uploaded file.";
-      else if (isAssets && layer.imageUrl) fileHint.textContent = "This layer uses a library asset.";
       else if (isUpload) fileHint.textContent = "Only SVG / plain SVG files are accepted. Upload is available only before the design has active content.";
     }
   }
@@ -1075,7 +1093,9 @@ function syncStickerDesignerFromInputs() {
           offsetY: 0,
           rotationDeg: 0,
           scale: 1,
-          widthCm: 10
+          widthCm: 10,
+          finish: (document.getElementById("stFinish") && document.getElementById("stFinish").value) || "matte",
+          customFinish: false
         });
         st.activeKey = "sticker:" + (st.stickerLayers.length - 1);
         _renderLayerBar(false);
@@ -1130,7 +1150,7 @@ function syncStickerDesignerFromInputs() {
     }) || _designerHasBackground();
   }
 
-  // Designer mode: Text vs Upload vs Assets (clean buttons)
+  // Designer mode: Text vs Upload (clean buttons)
   (function initDesignerMode() {
     const wrap = document.getElementById("designerMode");
     const hidden = document.getElementById("designMode");
@@ -1142,13 +1162,13 @@ function syncStickerDesignerFromInputs() {
     if (!wrap || !hidden || !textWrap || !fileWrap) return;
 
     function setMode(mode) {
-      let m = (mode === 'assets' || mode === 'upload' || mode === 'text') ? mode : 'text';
+      let m = (mode === 'upload' || mode === 'text') ? mode : 'text';
       const stCheck = _ensureDesignerState();
       const activeKeyCheck = stCheck.activeKey || 'sticker:0';
       const activeIdxCheck = String(activeKeyCheck).startsWith('sticker:') ? Number(String(activeKeyCheck).split(':')[1] || 0) || 0 : 0;
       const activeLayerCheck = stCheck.stickerLayers[activeIdxCheck];
       if (m === 'upload') {
-        alert('Uploads accept only SVG / plain SVG files. Upload is available only before the design has active content.');
+        alert('Upload accepts only SVG / plain SVG files. Please upload a clean .svg file without scripts.');
       }
       if (m === 'upload' && _designerHasAnyWork(activeIdxCheck) && !(activeLayerCheck && activeLayerCheck.imageUrl)) {
         m = 'text';
@@ -1157,8 +1177,7 @@ function syncStickerDesignerFromInputs() {
       }
       const isText = m === "text";
       const isUpload = m === 'upload';
-      const isAssets = m === 'assets';
-
+      
       hidden.value = m;
       // Persist mode into active sticker layer.
       const st = _ensureDesignerState();
@@ -1169,7 +1188,7 @@ function syncStickerDesignerFromInputs() {
 
       textWrap.style.display = isText ? "" : "none";
       fileWrap.style.display = isUpload ? "" : "none";
-      if (assetsWrap) assetsWrap.style.display = isAssets ? "" : "none";
+      if (assetsWrap) assetsWrap.style.display = "none";
 
       // Required fields:
       if (textInput) textInput.required = isText;
@@ -1193,253 +1212,7 @@ function syncStickerDesignerFromInputs() {
 
 
 
-  // Assets library (curated SVGs)
-  (function initAssetsLibrary(){
-    const grid = document.getElementById('stAssetsGrid');
-    const searchEl = document.getElementById('stAssetsSearch');
-    const hintEl = document.getElementById('stAssetsHint');
-    if (!grid) return;
-
-    let catalog = [];
-
-    function _getHashRouteAndQuery(){
-      const raw = String(location.hash || '').replace(/^#/, '');
-      const parts = raw.split('?');
-      const route = (parts[0] || '').trim();
-      const query = (parts[1] || '').trim();
-      const params = {};
-      if (query) {
-        query.split('&').forEach(function(p){
-          const kv = p.split('=');
-          const k = decodeURIComponent((kv[0]||'').trim());
-          const v = decodeURIComponent((kv[1]||'').trim());
-          if (k) params[k] = v;
-        });
-      }
-      return { route: route, params: params };
-    }
-
-    function _clearHashQueryKeepRoute(route){
-      try {
-        const clean = '#' + (route || 'design');
-        if (location.hash === clean) return;
-        history.replaceState(null, '', location.pathname + location.search + clean);
-      } catch(e){
-        location.hash = '#' + (route || 'design');
-      }
-    }
-
-    async function addAssetToDesigner(item){
-      if (!item) return;
-      try {
-        syncStickerDesignerFromInputs();
-        const st = _ensureDesignerState();
-        const maxL = _maxStickerLayers();
-        let svgText = '';
-        try { const rr = await fetch(item.svg); if (rr.ok) svgText = await rr.text(); } catch(e) {}
-        let targetIdx = -1;
-        const active = st.activeKey || 'sticker:0';
-        if (String(active).startsWith('sticker:')) {
-          const ai = Number(String(active).split(':')[1] || 0) || 0;
-          const al = st.stickerLayers[ai];
-          const empty = al && !String(al.textRaw || al.text || '').trim() && !al.imageUrl;
-          if (empty) targetIdx = ai;
-        }
-        if (targetIdx < 0 && st.stickerLayers.length >= maxL) return;
-
-        const newLayer = {
-          mode: 'assets',
-          assetId: item.id || '',
-          textRaw: '',
-          textFlow: (document.getElementById('stTextFlow') && document.getElementById('stTextFlow').value) || 'single',
-          text: '',
-          font: (document.getElementById('stFont') && document.getElementById('stFont').value) || 'Inter',
-          color: (document.getElementById('stMainColor') && document.getElementById('stMainColor').value) || '#FFFFFF',
-          imageUrl: item.svg,
-          isSvg: true,
-          offsetX: 0,
-          offsetY: 0,
-          rotationDeg: 0,
-          scale: 1,
-          widthCm: 10,
-          svgText: svgText
-        };
-        if (targetIdx >= 0) st.stickerLayers[targetIdx] = newLayer;
-        else { st.stickerLayers.push(newLayer); targetIdx = st.stickerLayers.length - 1; }
-
-        window.__ST_PREVIEW_WHITE_BG_PREF__ = false;
-        st.activeKey = 'sticker:' + targetIdx;
-
-        // Switch UI to Assets mode for this layer.
-        const hidden = document.getElementById('designMode');
-        if (hidden) hidden.value = 'assets';
-        const modeWrap = document.getElementById('designerMode');
-        if (modeWrap) {
-          modeWrap.querySelectorAll('.segBtn').forEach(function(b){
-            b.classList.toggle('active', b.getAttribute('data-mode') === 'assets');
-          });
-        }
-
-        _renderLayerBar(false);
-        _applyInputsFromActiveLayer();
-        updateStikeri();
-      } catch(e) {}
-    }
-
-    function consumeAssetFromHashOnce(){
-      try {
-        const h = _getHashRouteAndQuery();
-        if (h.route !== 'design') return;
-        const assetId = h.params && h.params.asset ? String(h.params.asset).trim() : '';
-        if (!assetId) return;
-        const item = (Array.isArray(catalog) ? catalog : []).find(function(it){ return String(it.id) === assetId; });
-        if (!item) return;
-        addAssetToDesigner(item);
-        _clearHashQueryKeepRoute('design');
-      } catch(e) {}
-    }
-
-    function render(list){
-      grid.innerHTML = '';
-      if (!Array.isArray(list) || !list.length){
-        if (hintEl) hintEl.textContent = 'No assets found.';
-        return;
-      }
-      if (hintEl) hintEl.textContent = '';
-
-      list.forEach(function(item){
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'assetBtn';
-        btn.setAttribute('data-svg', item.svg);
-        btn.setAttribute('title', item.name || 'Asset');
-
-        const img = document.createElement('img');
-        img.alt = item.name || 'asset';
-        img.src = item.svg;
-        btn.appendChild(img);
-
-        const name = document.createElement('div');
-        name.className = 'assetName';
-        name.textContent = item.name || item.id || 'Asset';
-        btn.appendChild(name);
-
-        btn.addEventListener('click', function(){
-          addAssetToDesigner(item);
-        });
-
-        grid.appendChild(btn);
-      });
-    }
-
-    function applyFilter(){
-      const q = (searchEl && searchEl.value || '').trim().toLowerCase();
-      if (!q) return render(catalog);
-      const filtered = catalog.filter(function(it){
-        const hay = [it.name, it.id, (it.tags||[]).join(' ')].join(' ').toLowerCase();
-        return hay.indexOf(q) !== -1;
-      });
-      render(filtered);
-    }
-
-    if (searchEl) searchEl.addEventListener('input', applyFilter);
-
-    fetch('assets/catalog.json')
-      .then(r => r.ok ? r.json() : [])
-      .then(function(data){
-        catalog = Array.isArray(data) ? data : [];
-        render(catalog);
-        // If navigated here with #design?asset=..., auto-insert it once.
-        consumeAssetFromHashOnce();
-      })
-      .catch(function(){
-        catalog = [];
-        render(catalog);
-      });
-
-    // React when user clicks "Use in designer" on the Assets page.
-    window.addEventListener('hashchange', consumeAssetFromHashOnce);
-  })();
-
-
-  // Assets page (website page that links into the designer)
-  (function initAssetsPage(){
-    const grid = document.getElementById('assetsPageGrid');
-    const searchEl = document.getElementById('assetsPageSearch');
-    const hintEl = document.getElementById('assetsPageHint');
-    if (!grid) return;
-
-    let catalog = [];
-
-    function render(list){
-      grid.innerHTML = '';
-      if (!Array.isArray(list) || !list.length){
-        if (hintEl) hintEl.textContent = 'No assets found.';
-        return;
-      }
-      if (hintEl) hintEl.textContent = '';
-      list.forEach(function(item){
-        const card = document.createElement('div');
-        card.className = 'assetCard';
-
-        const top = document.createElement('div');
-        top.className = 'assetCardTop';
-
-        const img = document.createElement('img');
-        img.alt = item.name || 'asset';
-        img.src = item.svg;
-        top.appendChild(img);
-
-        const nm = document.createElement('div');
-        nm.className = 'assetCardName';
-        nm.textContent = item.name || item.id || 'Asset';
-        top.appendChild(nm);
-
-        card.appendChild(top);
-
-        const actions = document.createElement('div');
-        actions.className = 'assetCardActions';
-
-        const use = document.createElement('a');
-        use.href = '#design?asset=' + encodeURIComponent(item.id || '');
-        use.textContent = 'Use in designer';
-        actions.appendChild(use);
-
-        const dl = document.createElement('a');
-        dl.href = item.svg;
-        dl.setAttribute('download', (item.id || 'asset') + '.svg');
-        dl.textContent = 'Download';
-        actions.appendChild(dl);
-
-        card.appendChild(actions);
-
-        grid.appendChild(card);
-      });
-    }
-
-    function applyFilter(){
-      const q = (searchEl && searchEl.value || '').trim().toLowerCase();
-      if (!q) return render(catalog);
-      const filtered = catalog.filter(function(it){
-        const hay = [it.name, it.id, (it.tags||[]).join(' ')].join(' ').toLowerCase();
-        return hay.indexOf(q) !== -1;
-      });
-      render(filtered);
-    }
-
-    if (searchEl) searchEl.addEventListener('input', applyFilter);
-
-    fetch('assets/catalog.json')
-      .then(r => r.ok ? r.json() : [])
-      .then(function(data){
-        catalog = Array.isArray(data) ? data : [];
-        render(catalog);
-      })
-      .catch(function(){
-        catalog = [];
-        render(catalog);
-      });
-  })();
+  // Assets functionality removed by request.
 
 
   // Quantity presets + manual input
@@ -1475,6 +1248,9 @@ function syncStickerDesignerFromInputs() {
 
   const stFile = document.getElementById("stFile");
   if (stFile) {
+    stFile.addEventListener("click", function () {
+      try { alert("Upload accepts only SVG / plain SVG files. Please upload a clean .svg file without scripts."); } catch(e) {}
+    });
     stFile.addEventListener("change", function () {
       const st = _ensureDesignerState();
       const active = st.activeKey || "sticker:0";
@@ -1519,7 +1295,8 @@ function syncStickerDesignerFromInputs() {
       const reader = new FileReader();
       reader.onload = function(){
         const svgText = String(reader.result || '').trim();
-        if (!/^<svg[\s>]/i.test(svgText.replace(/^<\?xml[^>]*>\s*/i, '').replace(/^<!doctype[^>]*>\s*/i, '')) || /<script[\s>]/i.test(svgText) || /on[a-z]+\s*=/i.test(svgText)) {
+        const cleanedSvgText = svgText.replace(/^\uFEFF/, '').replace(/^[\s\S]*?(<svg[\s>])/i, '$1');
+        if (!/<svg[\s>]/i.test(cleanedSvgText) || /<script[\s>]/i.test(cleanedSvgText) || /on[a-z]+\s*=/i.test(cleanedSvgText)) {
           const hint = document.getElementById("stFileHint");
           if (hint) {
             hint.textContent = "Only plain, safe SVG files are accepted. Remove scripts/embedded events and try again.";
@@ -1580,7 +1357,7 @@ function syncStickerDesignerFromInputs() {
           try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
         }
         layer.imageUrl = url;
-        layer.svgText = svgText;
+        layer.svgText = cleanedSvgText;
         layer.isSvg = true;
         // SVG artwork is usually best previewed on white.
         // Force White BG ON when an SVG is uploaded (user can toggle off).

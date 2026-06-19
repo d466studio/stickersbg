@@ -2,7 +2,7 @@
   "projects": [
     {
       "id": "BIke_project",
-      "title": "Bike Project",
+      "title": "MTB Projects",
       "description": "Fully customized mountain bike livery & brand stickers.",
       "images": [
         "projects/BIke_project/ChatGPT Image Feb 21, 2026, 12_44_51 AM.png",
@@ -12,8 +12,8 @@
     },
     {
       "id": "bmw-wheel",
-      "title": "BMW Wheel",
-      "description": "Custom blacked out BMW Wheel.",
+      "title": "BMW Emblem Blackout",
+      "description": "Custom BMW emblem blackout.",
       "images": [
         "projects/bmw-wheel/ChatGPT Image Feb 21, 2026, 11_29_48 PM.png",
         "projects/bmw-wheel/ChatGPT Image Feb 21, 2026, 11_31_04 PM.png"
@@ -30,7 +30,7 @@
     },
     {
       "id": "E43AMG_Project",
-      "title": "E43amg Project",
+      "title": "C43 Re-work",
       "description": "C43 AMG Custom \"Fake\" Vent sticker design + blackout front headlights.",
       "images": [
         "projects/E43AMG_Project/ChatGPT Image Feb 21, 2026, 12_35_40 AM.png",
@@ -39,7 +39,7 @@
     },
     {
       "id": "Milka-Engine",
-      "title": "Milka Engine",
+      "title": "Milka Engine Custom Cover",
       "description": "Funny Idea of our customers, to make their engine bay more \"sweet\" :D .",
       "images": [
         "projects/Milka-Engine/ChatGPT Image Feb 21, 2026, 11_40_41 PM.png"
