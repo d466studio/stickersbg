@@ -29,14 +29,14 @@
 
       // Home page
       home: {
-        title: "Create a sticker. We will create it perfectly.",
+        title: "Create a sticker. We will re-produce it perfectly.",
         description: "A one-of-a-kind sticker designer with <b>live preview</b> — create it your own way.",
         betaNotice: "⚠️ Beta version: this website is currently under construction. Some features may change.",
         ctaDesign: "Start designing",
         ctaShop: "Browse stickers",
         chips: {
           preview: "Live preview",
-          rules: "Print-safe rules",
+          rules: "Creativity Unlimited!",
           minimal: "Minimal, premium"
         },
         howItWorks: "How it works",
@@ -316,14 +316,14 @@
 
       // Home page
       home: {
-        title: "Създай стикер. Ние ще го създадем перфектно.",
+        title: "Създай стикер. Ние ще го превърнем в реалност!",
         description: "Единствен по рода си стикер дизайнер с <b>live preview</b> — създай по собствен вкус.",
         betaNotice: "⚠️ Beta версия: сайтът в момента е в процес на разработка. Някои функции може да се променят.",
         ctaDesign: "Започни дизайн",
         ctaShop: "Разгледай стикери",
         chips: {
           preview: "Live preview",
-          rules: "Правила за печат",
+          rules: "Creativity Unlimited!",
           minimal: "Минимално, премиум"
         },
         howItWorks: "Как работи",
