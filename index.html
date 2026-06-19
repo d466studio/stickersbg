@@ -336,6 +336,12 @@
               </div>
             </div>
 
+
+            <div class="finalPreviewBox" id="stFinalPreviewBox">
+              <div class="muted small">Final image that will be sent with the order:</div>
+              <img id="stFinalDesignPreview" alt="Final sticker design preview" />
+            </div>
+
             <p class="muted small" data-i18n="design.priceNote">Estimated price updates automatically.</p>
           </div>
         </div>
@@ -361,7 +367,7 @@
             <input type="hidden" name="designMode" id="designMode" value="text" />
           </div>
 
-          <form class="form" id="formStikeri">
+          <form class="form" id="formStikeri" action="https://formsubmit.co/pavel_kolarov@yahoo.com" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="orderEmail" value="pavel_kolarov@yahoo.com" />
             <input type="hidden" name="layers" id="stLayersData" value="" />
             <label id="stTextWrap">
@@ -578,6 +584,14 @@
               </label>
             </div>
             <input type="text" name="website" id="stWebsiteTrap" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0" aria-hidden="true" />
+            <input type="hidden" name="_subject" value="New stickers.studio order" />
+            <input type="hidden" name="_captcha" value="true" />
+            <input type="hidden" name="_template" value="table" />
+            <input type="hidden" name="type" value="stikeri_custom" />
+            <textarea name="order_summary" id="stOrderSummaryHidden" style="display:none"></textarea>
+            <textarea name="designer_settings_text" id="stDesignerSettingsHidden" style="display:none"></textarea>
+            <textarea name="final_design_svg_text" id="stFinalSvgTextHidden" style="display:none"></textarea>
+            <input type="file" name="attachment" id="stFinalDesignFile" accept="image/svg+xml,.svg" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" aria-hidden="true" />
 
             <label>
               <span data-i18n="design.form.contact">Contact</span>
