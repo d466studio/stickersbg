@@ -116,7 +116,7 @@ function buildStikeriSummary() {
 }
 
 
-async function buildDesignerSvgFile() {
+async function buildDesignerSvgText() {
   try {
     const st = window.ST_DESIGN_STATE || null;
     if (!st || !Array.isArray(st.stickerLayers)) return null;
@@ -172,9 +172,26 @@ async function buildDesignerSvgFile() {
       body += '</g>';
     }
     const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="'+pxW+'" height="'+pxH+'" viewBox="0 0 '+pxW+' '+pxH+'">'+body+'</svg>';
-    return new File([new Blob([svg], {type:'image/svg+xml'})], 'stickers-studio-design.svg', {type:'image/svg+xml'});
+    return svg;
   } catch(e) { return null; }
 }
+
+async function buildDesignerSvgFile() {
+  const svg = await buildDesignerSvgText();
+  if (!svg) return null;
+  return new File([new Blob([svg], {type:'image/svg+xml'})], 'stickers-studio-design.svg', {type:'image/svg+xml'});
+}
+
+async function updateFinalDesignPreview() {
+  try {
+    const img = document.getElementById('stFinalDesignPreview');
+    if (!img) return;
+    const svg = await buildDesignerSvgText();
+    if (!svg) return;
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svg)));
+  } catch(e) {}
+}
+window.updateFinalDesignPreview = updateFinalDesignPreview;
 
 // Optional submit
 async function postForm(formEl, hintEl, extra) {
@@ -188,7 +205,9 @@ async function postForm(formEl, hintEl, extra) {
       ".";
     return;
   }
-  // Basic anti-spam / email confirmation for static hosting.
+
+  // Sticker designer: use native FormSubmit POST so file attachments + CAPTCHA work.
+  // FormSubmit documents file uploads via normal multipart forms, and AJAX uploads are unreliable.
   if (formEl && formEl.id === "formStikeri") {
     const trap = document.getElementById("stWebsiteTrap");
     if (trap && String(trap.value || "").trim()) {
@@ -207,6 +226,56 @@ async function postForm(formEl, hintEl, extra) {
       hintEl.textContent = "❌ Email verification failed: both emails must match.";
       return;
     }
+
+    hintEl.textContent = "Preparing final SVG + CAPTCHA...";
+    const summary = buildStikeriSummary();
+    const svg = await buildDesignerSvgText();
+    if (!svg) {
+      hintEl.textContent = "❌ Could not create the final SVG file. Please add text or upload a valid SVG design.";
+      return;
+    }
+    const sumEl = document.getElementById("stOrderSummaryHidden");
+    const setEl = document.getElementById("stDesignerSettingsHidden");
+    const svgTextEl = document.getElementById("stFinalSvgTextHidden");
+    if (sumEl) sumEl.value = summary;
+    if (setEl) setEl.value = summary;
+    if (svgTextEl) svgTextEl.value = svg;
+    if (em) {
+      // FormSubmit uses fields named email/_replyto for reply-to handling.
+      let hiddenEmail = document.getElementById("stFormSubmitEmailHidden");
+      if (!hiddenEmail) {
+        hiddenEmail = document.createElement("input");
+        hiddenEmail.type = "hidden";
+        hiddenEmail.name = "email";
+        hiddenEmail.id = "stFormSubmitEmailHidden";
+        formEl.appendChild(hiddenEmail);
+      }
+      hiddenEmail.value = a;
+      let reply = document.getElementById("stReplyToHidden");
+      if (!reply) {
+        reply = document.createElement("input");
+        reply.type = "hidden";
+        reply.name = "_replyto";
+        reply.id = "stReplyToHidden";
+        formEl.appendChild(reply);
+      }
+      reply.value = a;
+    }
+    const fileInput = document.getElementById("stFinalDesignFile");
+    if (fileInput && window.DataTransfer) {
+      const dt = new DataTransfer();
+      dt.items.add(new File([new Blob([svg], {type:"image/svg+xml"})], "stickers-studio-final-design.svg", {type:"image/svg+xml"}));
+      fileInput.files = dt.files;
+    } else {
+      hintEl.textContent = "❌ Your browser cannot attach the generated SVG file. Try Chrome/Edge desktop.";
+      return;
+    }
+    await updateFinalDesignPreview();
+    formEl.action = CONFIG.formEndpoint;
+    formEl.method = "POST";
+    formEl.enctype = "multipart/form-data";
+    formEl.submit();
+    return;
   }
 
   hintEl.textContent = t("common.sending") || "Sending...";
@@ -215,15 +284,6 @@ async function postForm(formEl, hintEl, extra) {
     fd.append(entry[0], entry[1]);
   });
   fd.append("_subject", "New stickers.studio order");
-  fd.append("_captcha", "true");
-  const replyTo = fd.get("customer_email");
-  if (replyTo) fd.append("_replyto", replyTo);
-  if (formEl && formEl.id === "formStikeri") {
-    fd.append("order_summary", buildStikeriSummary());
-    fd.append("designer_settings_text", buildStikeriSummary());
-    const designFile = await buildDesignerSvgFile();
-    if (designFile) fd.append("final_design_svg", designFile, "stickers-studio-design.svg");
-  }
   try {
     const res = await fetch(CONFIG.formEndpoint, {
       method: "POST",
@@ -237,3 +297,17 @@ async function postForm(formEl, hintEl, extra) {
   }
 }
 
+(function initFinalPreviewAutoUpdate(){
+  function schedule(){
+    clearTimeout(window.__stFinalPreviewTimer);
+    window.__stFinalPreviewTimer = setTimeout(function(){
+      if (window.updateFinalDesignPreview) window.updateFinalDesignPreview();
+    }, 250);
+  }
+  document.addEventListener('input', schedule, true);
+  document.addEventListener('change', schedule, true);
+  document.addEventListener('click', function(e){
+    if (e && e.target && (e.target.closest('#page-design') || e.target.closest('#stPreviewBox'))) schedule();
+  }, true);
+  window.addEventListener('load', schedule);
+})();
