@@ -10,7 +10,7 @@ const CONFIG = {
   // 2. Copy the access_key from your dashboard and paste it below.
   // 3. Your email address is NEVER exposed in frontend code — only this key.
   // 4. Free tier: 250 submissions / month. No redirect. No email visible.
-  web3formsKey: "YOUR_WEB3FORMS_ACCESS_KEY", // ← REPLACE THIS
+  web3formsKey: "504908b1-9c88-400c-a9c2-3afe1f10f5fe",
 
   // Legacy fallback (used only if web3formsKey is not set)
   formEndpoint: "https://formsubmit.co/pavel_kolarov@yahoo.com"
