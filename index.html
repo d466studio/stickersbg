@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0B0C10" />
+  <meta name="description" content="stickers.studio — a premium custom sticker & vinyl design studio. Design your sticker with a live preview and order with print-safe rules." />
   <title>stickers.studio</title>
 
   <!-- Favicons -->
@@ -800,6 +802,12 @@
     </div>
   </footer>
 
+  <!-- Embedded data mirrors so the site also works when opened directly via file://
+       (browsers block fetch() over file://). When hosted over http/GitHub Pages the
+       canonical .json files are used instead. -->
+  <script src="colors-data.js"></script>
+  <script src="projects/projects-data.js"></script>
+
   <script src="translations.js"></script>
   <script src="router.js"></script>
   <script src="storage.js"></script>
@@ -809,5 +817,6 @@
   <script src="app.js"></script>
   <script src="projects.js"></script>
   <script src="i18n.js"></script>
+  <script src="ui-motion.js"></script>
 </body>
 </html>

@@ -1163,17 +1163,10 @@ function syncStickerDesignerFromInputs() {
 
     function setMode(mode) {
       let m = (mode === 'upload' || mode === 'text') ? mode : 'text';
-      const stCheck = _ensureDesignerState();
-      const activeKeyCheck = stCheck.activeKey || 'sticker:0';
-      const activeIdxCheck = String(activeKeyCheck).startsWith('sticker:') ? Number(String(activeKeyCheck).split(':')[1] || 0) || 0 : 0;
-      const activeLayerCheck = stCheck.stickerLayers[activeIdxCheck];
+      // Non-blocking guidance (the old code used a blocking alert() on every switch).
       if (m === 'upload') {
-        alert('Upload accepts only SVG / plain SVG files. Please upload a clean .svg file without scripts.');
-      }
-      if (m === 'upload' && _designerHasAnyWork(activeIdxCheck) && !(activeLayerCheck && activeLayerCheck.imageUrl)) {
-        m = 'text';
         const hint = document.getElementById('stFileHint');
-        if (hint) hint.textContent = 'Upload is disabled after a design is started. Start fresh to upload an SVG.';
+        if (hint) { hint.textContent = 'Upload a clean .svg file — it appears in the preview instantly.'; hint.classList.remove('errorText'); }
       }
       const isText = m === "text";
       const isUpload = m === 'upload';
@@ -1246,154 +1239,202 @@ function syncStickerDesignerFromInputs() {
     });
   }
 
+  // --- SVG upload (robust, instant preview) ---
+  // The previous implementation rendered the upload from an <img>.onload of a
+  // blob: URL. On Windows, .svg files frequently report an empty file.type, so the
+  // blob has no MIME type and the browser refuses to decode it as an image
+  // (img.onerror fires) \u2014 which is why the artwork only appeared after a full page
+  // reload + re-upload. We now:
+  //   1) read the file as text,
+  //   2) sanitize it (strip <script>/<foreignObject>, on* handlers and js: refs),
+  //   3) render it from a self-contained data: URL with an explicit SVG MIME type.
+  // This makes the layer + preview update instantly, works on every OS/browser,
+  // and guarantees the exported SVG (which reuses layer.svgText) matches the
+  // on-screen design exactly.
   const stFile = document.getElementById("stFile");
-  if (stFile) {
-    stFile.addEventListener("click", function () {
-      try { alert("Upload accepts only SVG / plain SVG files. Please upload a clean .svg file without scripts."); } catch(e) {}
+
+  function _stSetFileHint(msg, isError) {
+    const hint = document.getElementById("stFileHint");
+    if (!hint) return;
+    hint.textContent = msg || "";
+    hint.classList.toggle("errorText", !!isError);
+  }
+
+  // Sanitize a live <svg> DOM node and serialize it to WELL-FORMED XML.
+  // IMPORTANT: the preview renders SVGs through <img src="data:\u2026">, and the <img>
+  // SVG decoder only accepts well-formed XML with a proper xmlns \u2014 so we must always
+  // emit clean XML here, never the raw (possibly malformed) file text.
+  function _sanitizeSvgNode(svg) {
+    try { svg.querySelectorAll("script, foreignObject").forEach(function (n) { n.remove(); }); } catch (e) {}
+    const all = [svg].concat(Array.prototype.slice.call(svg.querySelectorAll ? svg.querySelectorAll("*") : []));
+    all.forEach(function (node) {
+      Array.prototype.slice.call(node.attributes || []).forEach(function (attr) {
+        const name = String(attr.name || "").toLowerCase();
+        const val = String(attr.value || "");
+        if (name.indexOf("on") === 0) node.removeAttribute(attr.name);                    // onclick, onload, ...
+        else if (/(^|:)href$|^src$/.test(name) && /^\s*(javascript:|data:text\/html)/i.test(val)) node.removeAttribute(attr.name);
+      });
     });
+    // Guarantee a namespace (required by <img>) + a coordinate system (clean scaling).
+    if (!svg.getAttribute("xmlns")) svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    if (!svg.getAttribute("viewBox")) {
+      const w = parseFloat(svg.getAttribute("width")) || 0;
+      const h = parseFloat(svg.getAttribute("height")) || 0;
+      if (w > 0 && h > 0) svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+    }
+    let out = new XMLSerializer().serializeToString(svg);
+    if (!/xmlns=/.test(out)) out = out.replace(/<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    return out;
+  }
+
+  // Parse + sanitize SVG markup. Returns clean, well-formed SVG XML, or null only
+  // when the file clearly isn't an SVG at all. Three tiers, most\u2192least strict:
+  //   1) strict XML parse (clean tool exports),
+  //   2) lenient HTML parse \u2192 re-serialize as XML (fixes missing xmlns, unescaped
+  //      "&", unclosed tags \u2014 the common real-world malformations that the browser
+  //      tolerates inline but an <img> would otherwise refuse to render),
+  //   3) last-resort regex pass on the raw text.
+  function _sanitizeSvgText(rawText) {
+    const text = String(rawText || "")
+      .replace(/^\uFEFF/, "")                  // strip byte-order mark
+      .replace(/^[\s\S]*?(<svg[\s>])/i, "$1"); // drop any prolog/junk before <svg>
+    if (!/<svg[\s>]/i.test(text)) return null; // not an SVG \u2192 reject
+
+    // 1) Strict XML.
+    try {
+      const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+      const svg = doc && doc.querySelector("svg");
+      if (svg && !doc.querySelector("parsererror")) return _sanitizeSvgNode(svg);
+    } catch (e) {}
+
+    // 2) Lenient HTML parse, then re-serialize the <svg> node as well-formed XML.
+    try {
+      const hdoc = new DOMParser().parseFromString(text, "text/html");
+      const svg = hdoc && hdoc.querySelector("svg");
+      if (svg) return _sanitizeSvgNode(svg);
+    } catch (e) {}
+
+    // 3) Last resort: strip dangerous bits from the raw text and ensure a namespace.
+    let cleaned = String(text)
+      .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, "")
+      .replace(/<\s*script[^>]*\/?\s*>/gi, "")
+      .replace(/\son[a-z0-9_-]+\s*=\s*"[^"]*"/gi, "")
+      .replace(/\son[a-z0-9_-]+\s*=\s*'[^']*'/gi, "");
+    if (!/xmlns=/.test(cleaned)) cleaned = cleaned.replace(/<svg/i, '<svg xmlns="http://www.w3.org/2000/svg"');
+    return cleaned;
+  }
+
+  function _svgTextToDataUrl(svgText) {
+    try { return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgText))); }
+    catch (e) { return ""; }
+  }
+
+  function _clearLayerImage(layer) {
+    if (!layer) return;
+    if (layer.imageUrl && String(layer.imageUrl).startsWith("blob:")) {
+      try { URL.revokeObjectURL(layer.imageUrl); } catch (e) {}
+    }
+    layer.imageUrl = "";
+    layer.svgText = "";
+    layer.isSvg = false;
+  }
+
+  if (stFile) {
     stFile.addEventListener("change", function () {
       const st = _ensureDesignerState();
-      const active = st.activeKey || "sticker:0";
-      if (!active.startsWith("sticker:")) return;
-      const idx = Number(active.split(":")[1] || 0);
+      // Always upload into a sticker layer (never the background layer).
+      let active = st.activeKey || "sticker:0";
+      if (!active.startsWith("sticker:")) { active = "sticker:0"; st.activeKey = active; }
+      const idx = Number(active.split(":")[1] || 0) || 0;
       const layer = st.stickerLayers[idx];
       if (!layer) return;
 
       const file = stFile.files && stFile.files[0];
-      if (!file) {
-        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
-          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
-        }
-        layer.imageUrl = "";
-        layer.isSvg = false;
-        const sizeHint = document.getElementById("stSizeHint");
-        const wEl = document.getElementById("stWidth");
-        if (wEl) wEl.max = "60";
-        if (sizeHint) sizeHint.textContent = "";
-        return;
-      }
-      // Guardrail: keep uploads disciplined. For now allow SVG only (scales cleanly and avoids random raster quality).
-      const isSvgByType = file.type === "image/svg+xml";
-      const isSvgByName = /\.svg$/i.test(file.name || "");
-      const isSvg = isSvgByType || isSvgByName;
+      if (!file) { _clearLayerImage(layer); updateStikeri(); return; }
+
+      // SVG-only upload.
+      const isSvg = file.type === "image/svg+xml" || /\.svg$/i.test(file.name || "");
       if (!isSvg) {
-        const hint = document.getElementById("stFileHint");
-        if (hint) {
-          hint.textContent = "Only SVG files are allowed for uploads.";
-          hint.classList.add('errorText');
-        }
-        stFile.value = "";
-        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
-          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
-        }
-        layer.imageUrl = "";
-        layer.isSvg = false;
-        updateStikeri();
+        _stSetFileHint("Only SVG files are accepted. Please choose a .svg file.", true);
+        stFile.value = "";        // reset so re-selecting always re-fires `change`
         return;
       }
 
+      _stSetFileHint("Loading SVG\u2026", false);
       const reader = new FileReader();
-      reader.onload = function(){
-        const svgText = String(reader.result || '').trim();
-        const cleanedSvgText = svgText.replace(/^\uFEFF/, '').replace(/^[\s\S]*?(<svg[\s>])/i, '$1');
-        if (!/<svg[\s>]/i.test(cleanedSvgText) || /<script[\s>]/i.test(cleanedSvgText) || /on[a-z]+\s*=/i.test(cleanedSvgText)) {
-          const hint = document.getElementById("stFileHint");
-          if (hint) {
-            hint.textContent = "Only plain, safe SVG files are accepted. Remove scripts/embedded events and try again.";
-            hint.classList.add('errorText');
-          }
+      reader.onload = function () {
+        const cleaned = _sanitizeSvgText(reader.result);
+        if (!cleaned) {
+          _stSetFileHint("This file is not a valid/safe SVG. Remove scripts and try again.", true);
+          stFile.value = "";
+          return;
+        }
+        const dataUrl = _svgTextToDataUrl(cleaned);
+        if (!dataUrl) {
+          _stSetFileHint("Could not process this SVG. Try another file.", true);
           stFile.value = "";
           return;
         }
 
-            // Ensure the layer (and UI) is in upload mode so the preview renders the image.
-      try {
-        layer.mode = 'upload';
-        // Keep this layer active so the user immediately sees/edits it.
-        st.activeKey = 'sticker:' + idx;
-        const hiddenMode = document.getElementById('designMode');
-        if (hiddenMode) hiddenMode.value = 'upload';
-        const modeWrap = document.getElementById('designerMode');
-        if (modeWrap) {
-          modeWrap.querySelectorAll('.segBtn').forEach(function(b){
-            b.classList.toggle('active', b.getAttribute('data-mode') === 'upload');
-          });
-        }
-      } catch(e){}
-
-      // Basic quality guardrail + max size rules.
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.onload = function () {
-        // For SVG, Image() often reports 0x0; we accept and render it anyway.
-        const ok = true;
-        const hint = document.getElementById("stFileHint");
-        if (!ok) {
-          if (hint) {
-            hint.textContent = "This file is too small for clean printing. Please upload a higher-resolution image.";
-            hint.classList.add('errorText');
-          }
-          stFile.value = "";
-          if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
-            try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
-          }
-          layer.imageUrl = "";
-          layer.isSvg = false;
-          updateStikeri();
-          return;
-        }
-        // SVG uploads can be larger; keep width max relaxed.
-        const sizeHint = document.getElementById("stSizeHint");
-        const wEl = document.getElementById("stWidth");
-        if (wEl) wEl.max = "60";
-        if (sizeHint) sizeHint.textContent = "SVG uploads scale cleanly and can be larger than A4.";
-
-        if (hint) {
-          hint.textContent = "Looks good.";
-          hint.classList.remove('errorText');
-        }
-        // Save into current layer
-        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
-          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
-        }
-        layer.imageUrl = url;
-        layer.svgText = cleanedSvgText;
+        // Commit to the active layer and switch it to upload mode.
+        _clearLayerImage(layer);
+        layer.mode = "upload";
+        layer.imageUrl = dataUrl;   // data: URL renders instantly AND matches the export
+        layer.svgText = cleaned;
         layer.isSvg = true;
-        // SVG artwork is usually best previewed on white.
-        // Force White BG ON when an SVG is uploaded (user can toggle off).
+        if (!isFinite(Number(layer.rotationDeg))) layer.rotationDeg = 0;
+        if (!isFinite(Number(layer.scale))) layer.scale = 1;
+        st.activeKey = "sticker:" + idx;
+
+        // Reflect upload mode in the UI controls.
+        const hiddenMode = document.getElementById("designMode");
+        if (hiddenMode) hiddenMode.value = "upload";
+        const modeWrap = document.getElementById("designerMode");
+        if (modeWrap) modeWrap.querySelectorAll(".segBtn").forEach(function (b) {
+          b.classList.toggle("active", b.getAttribute("data-mode") === "upload");
+        });
+
+        // Relax the whole-width cap (SVG scales cleanly) and hint it.
+        const wEl = document.getElementById("stWidth");
+        if (wEl) wEl.max = "200";
+
+        // SVG art previews best on white; default it on (user can still toggle off).
         window.__ST_PREVIEW_WHITE_BG_PREF__ = true;
         try {
-          const box = document.getElementById('stPreviewBox');
-          if (box) box.classList.add('whiteBgOn');
-          const btn = document.getElementById('stWhiteBgToggle');
-          if (btn) btn.classList.add('active');
-        } catch(e) {}
+          const box = document.getElementById("stPreviewBox");
+          if (box) box.classList.add("whiteBgOn");
+          const wbtn = document.getElementById("stWhiteBgToggle");
+          if (wbtn) wbtn.classList.add("active");
+        } catch (e) {}
 
-        // Default rotation for newly uploaded artwork.
-        if (!isFinite(Number(layer.rotationDeg))) layer.rotationDeg = 0;
+        // Live update: state, controls, layer bar, preview and final/export preview.
         syncStickerDesignerFromInputs();
-        updateStikeri();
+        _applyInputsFromActiveLayer();
         _renderLayerBar(false);
-      };
-      img.onerror = function () {
-        const hint = document.getElementById("stFileHint");
-        if (hint) {
-          hint.textContent = "Could not read this file. Please try another image.";
-          hint.classList.add('errorText');
-        }
-        stFile.value = "";
-        if (layer.imageUrl && layer.imageUrl.startsWith("blob:")) {
-          try { URL.revokeObjectURL(layer.imageUrl); } catch(e){}
-        }
-        layer.imageUrl = "";
-        layer.isSvg = false;
         updateStikeri();
+        if (window.updateFinalDesignPreview) window.updateFinalDesignPreview();
+
+        // Success message (set AFTER _applyInputsFromActiveLayer so it isn't overwritten).
+        _stSetFileHint("\u2705 SVG added \u2014 drag it inside the preview to position it.", false);
+
+        // Safety net: confirm the artwork actually decodes as an image. If some exotic
+        // file still won't render, tell the user instead of leaving a silent blank.
+        (function (expectedUrl) {
+          const probe = new Image();
+          probe.onerror = function () {
+            const layerNow = (window.ST_DESIGN_STATE && window.ST_DESIGN_STATE.stickerLayers[idx]) || null;
+            if (layerNow && layerNow.imageUrl === expectedUrl) {
+              _stSetFileHint("This SVG could not be rendered. Please re-save/export it as a plain SVG and try again.", true);
+            }
+          };
+          probe.src = expectedUrl;
+        })(dataUrl);
+
+        // Reset the input so the SAME file can be selected again later.
+        stFile.value = "";
       };
-      img.src = url;
-      };
-      reader.onerror = function(){
-        const hint = document.getElementById("stFileHint");
-        if (hint) hint.textContent = "Could not read SVG file.";
+      reader.onerror = function () {
+        _stSetFileHint("Could not read this file. Please try again.", true);
         stFile.value = "";
       };
       reader.readAsText(file);
@@ -1532,6 +1573,15 @@ function syncStickerDesignerFromInputs() {
         if (stFile) stFile.value = '';
         const hint = document.getElementById('stFileHint');
         if (hint){ hint.textContent = ''; hint.classList.remove('errorText'); }
+
+        // Restore the default dark preview background (an SVG upload turns it white).
+        window.__ST_PREVIEW_WHITE_BG_PREF__ = null;
+        try {
+          const pbox = document.getElementById('stPreviewBox');
+          if (pbox) pbox.classList.remove('whiteBgOn');
+          const wbtn2 = document.getElementById('stWhiteBgToggle');
+          if (wbtn2) wbtn2.classList.remove('active');
+        } catch(e){}
 
         // Reset internal state and revoke blobs
         if (window.ST_DESIGN_STATE && Array.isArray(window.ST_DESIGN_STATE.stickerLayers)){

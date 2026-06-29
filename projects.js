@@ -136,22 +136,33 @@
   }
 
   // ---- Data ----
+  function render(grid, data) {
+    var list = (data && data.projects) || [];
+    grid.innerHTML = "";
+    if (!list.length) {
+      grid.innerHTML = '<div class="emptyState">No projects yet.</div>';
+      return;
+    }
+    list.forEach(function (p) { grid.appendChild(buildCard(p)); });
+  }
+
   function load() {
     var grid = ensureContainer();
     if (!grid) return;
 
+    // fetch() is blocked over file://, so when the page is opened directly use the
+    // embedded mirror (projects/projects-data.js). Over http/GitHub Pages we fetch
+    // the canonical projects.json, falling back to the embedded data on any error.
+    if (location.protocol === "file:" && window.PROJECTS_DB) {
+      render(grid, window.PROJECTS_DB);
+      return;
+    }
+
     fetch("projects/projects.json", { cache: "no-store" })
       .then(function (r) { return r.json(); })
-      .then(function (data) {
-        var list = (data && data.projects) || [];
-        grid.innerHTML = "";
-        if (!list.length) {
-          grid.innerHTML = '<div class="emptyState">No projects yet.</div>';
-          return;
-        }
-        list.forEach(function (p) { grid.appendChild(buildCard(p)); });
-      })
+      .then(function (data) { render(grid, data); })
       .catch(function () {
+        if (window.PROJECTS_DB) { render(grid, window.PROJECTS_DB); return; }
         grid.innerHTML = '<div class="emptyState">Could not load projects.</div>';
       });
   }

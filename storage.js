@@ -35,7 +35,14 @@ async function loadColors() {
       // ignore corrupted local override
     }
   }
+  // fetch() is blocked over file://, so use the embedded mirror (colors-data.js)
+  // when the page is opened directly. Over http we fetch the canonical colors.json.
+  if (location.protocol === "file:" && Array.isArray(window.COLORS_DB) && window.COLORS_DB.length) {
+    return window.COLORS_DB;
+  }
   const json = await safeFetchJson("colors.json");
-  return Array.isArray(json) && json.length ? json : FALLBACK_COLORS;
+  if (Array.isArray(json) && json.length) return json;
+  if (Array.isArray(window.COLORS_DB) && window.COLORS_DB.length) return window.COLORS_DB;
+  return FALLBACK_COLORS;
 }
 
