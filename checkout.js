@@ -256,93 +256,127 @@ window.updateFinalDesignPreview = updateFinalDesignPreview;
 // Optional submit
 async function postForm(formEl, hintEl, extra) {
   const t = window.t || function(s) { return s; };
-  if (!CONFIG.formEndpoint) {
-    hintEl.textContent =
-      (t("common.noEndpoint") || "⚠️ No formEndpoint. Add endpoint in app.js. Meanwhile: ") +
-      CONFIG.instagram +
-      " / " +
-      CONFIG.contactEmail +
-      ".";
+
+  // ── Sticker Designer: Web3Forms backendless submit ─────────────────────────
+  // Email never visible in frontend. Set CONFIG.web3formsKey in storage.js.
+  if (formEl && formEl.id === "formStikeri") {
+    if (window.__stSubmitting) return;
+
+    // Honeypot check
+    const trap = document.getElementById("stWebsiteTrap");
+    if (trap && String(trap.value || "").trim()) { hintEl.textContent = "❌ Spam check failed."; return; }
+
+    // Email validation
+    const em = document.getElementById("stCustomerEmail");
+    const em2 = document.getElementById("stCustomerEmailConfirm");
+    const emailA = String((em && em.value) || "").trim().toLowerCase();
+    const emailB = String((em2 && em2.value) || "").trim().toLowerCase();
+    if (!emailA || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailA)) {
+      hintEl.textContent = "❌ Please enter a valid email address."; return;
+    }
+    if (emailA !== emailB) {
+      hintEl.textContent = "❌ Both email fields must match."; return;
+    }
+
+    // Check Web3Forms key is configured
+    const w3key = (typeof CONFIG !== "undefined" && CONFIG.web3formsKey) || "";
+    if (!w3key || w3key === "YOUR_WEB3FORMS_ACCESS_KEY") {
+      // Fallback: show contact info instead of exposing email via native submit
+      hintEl.textContent = "⚠️ Order system not configured yet. Contact us directly: " + (CONFIG.instagram || "@stickers.studio.bg");
+      return;
+    }
+
+    // Gather design SVG
+    const submitBtn = document.getElementById("stSubmitBtn");
+    const successEl = document.getElementById("stOrderSuccess");
+    window.__stSubmitting = true;
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = "Sending…"; }
+    if (hintEl) hintEl.textContent = "Preparing design…";
+
+    let svg = null;
+    try { svg = await buildDesignerSvgText(); } catch(e) {}
+    await updateFinalDesignPreview();
+
+    if (!svg) {
+      window.__stSubmitting = false;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = (document.getElementById("stSubmitBtnText") && document.getElementById("stSubmitBtnText").textContent) || "Order sticker"; }
+      hintEl.textContent = "❌ Add some text or upload a design first.";
+      return;
+    }
+
+    // Build order summary
+    const summary = buildStikeriSummary();
+    const customerName = String((document.getElementById("stCustomerName") && document.getElementById("stCustomerName").value) || "").trim();
+    const contact = String((formEl.querySelector('[name="contact"]') && formEl.querySelector('[name="contact"]').value) || "").trim();
+    const delivery = String((document.getElementById("stDelivery") && document.getElementById("stDelivery").value) || "pickup");
+    const notes = String((formEl.querySelector('[name="description"]') && formEl.querySelector('[name="description"]').value) || "").trim();
+    const qty = String((document.getElementById("stQty") && document.getElementById("stQty").value) || "50");
+    const width = String((document.getElementById("stWidth") && document.getElementById("stWidth").value) || "10");
+    const finish = String((document.getElementById("stFinish") && document.getElementById("stFinish").value) || "matte");
+    const price = String((document.getElementById("stPrice") && document.getElementById("stPrice").textContent) || "—");
+
+    const payload = {
+      access_key: w3key,
+      subject: "New stickers.studio order" + (customerName ? " from " + customerName : ""),
+      from_name: "stickers.studio order form",
+      replyto: emailA,
+
+      // Customer info
+      "Customer Name": customerName || "(not provided)",
+      "Customer Email": emailA,
+      "Phone / Instagram": contact || "(not provided)",
+      "Delivery": delivery === "courier" ? "Courier delivery" : "Pickup (Sofia)",
+
+      // Design summary
+      "Size (cm)": width + " cm",
+      "Quantity": qty,
+      "Finish": finish,
+      "Price Estimate": price,
+      "Notes": notes || "(none)",
+
+      // Full order summary
+      "Order Summary": summary,
+
+      // SVG design (first 8000 chars; sufficient for simple designs)
+      "Design SVG": svg ? svg.slice(0, 8000) + (svg.length > 8000 ? "\n[truncated]" : "") : "(none)"
+    };
+
+    if (hintEl) hintEl.textContent = "Sending order…";
+
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || "Submission failed");
+
+      // Success
+      if (hintEl) hintEl.style.display = "none";
+      if (successEl) successEl.style.display = "";
+      if (submitBtn) submitBtn.style.display = "none";
+      formEl.reset();
+    } catch(err) {
+      window.__stSubmitting = false;
+      if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = "Order sticker"; }
+      hintEl.style.display = "";
+      hintEl.textContent = "❌ Could not send order. Please try again or contact us via Instagram: " + (CONFIG.instagram || "@stickers.studio.bg");
+      console.error("[order]", err);
+    }
     return;
   }
 
-  // Sticker designer: use native FormSubmit POST so file attachments + CAPTCHA work.
-  // FormSubmit documents file uploads via normal multipart forms, and AJAX uploads are unreliable.
-  if (formEl && formEl.id === "formStikeri") {
-    const trap = document.getElementById("stWebsiteTrap");
-    if (trap && String(trap.value || "").trim()) {
-      hintEl.textContent = "❌ Spam check failed.";
-      return;
-    }
-    const em = document.getElementById("stCustomerEmail");
-    const em2 = document.getElementById("stCustomerEmailConfirm");
-    const a = String((em && em.value) || "").trim().toLowerCase();
-    const b = String((em2 && em2.value) || "").trim().toLowerCase();
-    if (!a || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a)) {
-      hintEl.textContent = "❌ Please enter a valid email address.";
-      return;
-    }
-    if (a !== b) {
-      hintEl.textContent = "❌ Email verification failed: both emails must match.";
-      return;
-    }
-
-    hintEl.textContent = "Preparing final SVG + CAPTCHA...";
-    const summary = buildStikeriSummary();
-    const svg = await buildDesignerSvgText();
-    if (!svg) {
-      hintEl.textContent = "❌ Could not create the final SVG file. Please add text or upload a valid SVG design.";
-      return;
-    }
-    const sumEl = document.getElementById("stOrderSummaryHidden");
-    const setEl = document.getElementById("stDesignerSettingsHidden");
-    const svgTextEl = document.getElementById("stFinalSvgTextHidden");
-    if (sumEl) sumEl.value = summary;
-    if (setEl) setEl.value = summary;
-    if (svgTextEl) svgTextEl.value = svg;
-    if (em) {
-      // FormSubmit uses fields named email/_replyto for reply-to handling.
-      let hiddenEmail = document.getElementById("stFormSubmitEmailHidden");
-      if (!hiddenEmail) {
-        hiddenEmail = document.createElement("input");
-        hiddenEmail.type = "hidden";
-        hiddenEmail.name = "email";
-        hiddenEmail.id = "stFormSubmitEmailHidden";
-        formEl.appendChild(hiddenEmail);
-      }
-      hiddenEmail.value = a;
-      let reply = document.getElementById("stReplyToHidden");
-      if (!reply) {
-        reply = document.createElement("input");
-        reply.type = "hidden";
-        reply.name = "_replyto";
-        reply.id = "stReplyToHidden";
-        formEl.appendChild(reply);
-      }
-      reply.value = a;
-    }
-    const fileInput = document.getElementById("stFinalDesignFile");
-    if (fileInput && window.DataTransfer) {
-      const dt = new DataTransfer();
-      dt.items.add(new File([new Blob([svg], {type:"image/svg+xml"})], "stickers-studio-final-design.svg", {type:"image/svg+xml"}));
-      fileInput.files = dt.files;
-    } else {
-      hintEl.textContent = "❌ Your browser cannot attach the generated SVG file. Try Chrome/Edge desktop.";
-      return;
-    }
-    await updateFinalDesignPreview();
-    formEl.action = CONFIG.formEndpoint;
-    formEl.method = "POST";
-    formEl.enctype = "multipart/form-data";
-    formEl.submit();
+  // ── Other forms: generic fetch to formEndpoint ─────────────────────────────
+  if (!CONFIG.formEndpoint) {
+    hintEl.textContent =
+      "⚠️ Contact us directly: " + (CONFIG.instagram || "") + " / " + (CONFIG.contactEmail || "");
     return;
   }
 
   hintEl.textContent = t("common.sending") || "Sending...";
   const fd = new FormData(formEl);
-  Object.entries(extra || {}).forEach(function (entry) {
-    fd.append(entry[0], entry[1]);
-  });
+  Object.entries(extra || {}).forEach(function (entry) { fd.append(entry[0], entry[1]); });
   fd.append("_subject", "New stickers.studio order");
   try {
     const res = await fetch(CONFIG.formEndpoint, {

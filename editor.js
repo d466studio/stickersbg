@@ -658,6 +658,26 @@ function updateStikeri() {
     $("stRulerText").textContent = "~" + width + " " + cmText;
   }
 
+  // Font-readiness: if a text layer's font hasn't loaded yet, re-render once it arrives.
+  (function(){
+    try {
+      if (!document.fonts || !document.fonts.load || !document.fonts.check) return;
+      const st = window.ST_DESIGN_STATE;
+      if (!st || !Array.isArray(st.stickerLayers)) return;
+      const seen = {};
+      const pending = st.stickerLayers.filter(function(l){
+        if (!l || l.mode === 'upload' || !l.font) return false;
+        if (seen[l.font]) return false;
+        seen[l.font] = true;
+        return !document.fonts.check('800 48px "' + l.font + '"');
+      }).map(function(l){ return l.font; });
+      if (!pending.length) return;
+      Promise.all(pending.map(function(f){ return document.fonts.load('800 48px "' + f + '"'); }))
+        .then(function(){ clearTimeout(window.__stFontRerenderTimer); window.__stFontRerenderTimer = setTimeout(updateStikeri, 80); })
+        .catch(function(){});
+    } catch(e) {}
+  })();
+
   // Background options visibility
   const bgOpts = $("stBgOptions");
   if (bgOpts) bgOpts.style.display = bg && bg !== "none" ? "" : "none";

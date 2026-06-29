@@ -2,9 +2,18 @@
 
 const CONFIG = {
   brandName: "stickers.studio",
-  instagram: "@stickers.studio",
-  formEndpoint: "https://formsubmit.co/pavel_kolarov@yahoo.com", // static-site order endpoint
-  contactEmail: "pavel_kolarov@yahoo.com"
+  instagram: "@stickers.studio.bg",
+  contactEmail: "pavel_kolarov@yahoo.com",
+
+  // ── Web3Forms (backendless email) ────────────────────────────────────────
+  // 1. Go to https://web3forms.com and sign up with your owner email.
+  // 2. Copy the access_key from your dashboard and paste it below.
+  // 3. Your email address is NEVER exposed in frontend code — only this key.
+  // 4. Free tier: 250 submissions / month. No redirect. No email visible.
+  web3formsKey: "YOUR_WEB3FORMS_ACCESS_KEY", // ← REPLACE THIS
+
+  // Legacy fallback (used only if web3formsKey is not set)
+  formEndpoint: "https://formsubmit.co/pavel_kolarov@yahoo.com"
 };
 
 const FALLBACK_COLORS = [

@@ -694,3 +694,79 @@ input[type="file"]::file-selector-button:hover{background:rgba(139,92,246,.22)}
   .reveal{opacity:1 !important;transform:none !important}
   .mockPhoto::after{animation:none}
 }
+
+/* ================================================= 21. Designer two-column layout */
+
+/* Side-by-side: preview (left/sticky) + controls (right/scrollable) */
+.designerLayout{display:grid;grid-template-columns:54% 46%;gap:18px;align-items:start}
+
+.designerPreviewCol{position:sticky;top:calc(70px + 12px)} /* below topbar */
+.designerPreviewCard{padding:18px}
+.designerPreviewCard .previewWrap{gap:10px}
+#page-design .designerPreviewCard #stPreviewBox.previewBox{width:100%;min-height:380px;height:420px;padding:12px;cursor:grab}
+
+/* Controls column: form with no extra spacing (accordion handles spacing) */
+.dsForm{display:flex;flex-direction:column;gap:0}
+
+/* Accordion sections */
+.dsSection{
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  background:var(--surface);background-image:var(--grad-surface);
+  box-shadow:var(--shadow-sm);margin-bottom:10px;overflow:hidden;
+}
+.dsSection summary.dsSectionHead{
+  cursor:pointer;list-style:none;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;gap:10px;
+  font-weight:700;font-size:14px;letter-spacing:.01em;
+  user-select:none;
+  transition:background var(--t-fast) var(--ease);
+}
+.dsSection summary.dsSectionHead:hover{background:rgba(255,255,255,.03)}
+.dsSection summary.dsSectionHead::after{
+  content:"▾";font-size:11px;opacity:.6;flex-shrink:0;
+  transition:transform var(--t-fast) var(--ease);
+}
+.dsSection[open] summary.dsSectionHead::after{transform:rotate(180deg)}
+.dsSection summary.dsSectionHead::-webkit-details-marker{display:none}
+.dsSection summary.dsSectionHead::marker{display:none}
+.dsSectionBody{
+  display:flex;flex-direction:column;gap:13px;
+  padding:4px 18px 18px;
+  border-top:1px solid var(--line-2);
+}
+
+/* Submit block */
+.dsSubmitBlock{
+  display:flex;flex-direction:column;gap:12px;
+  padding:6px 0 10px;
+}
+.btnFullWidth{width:100%;justify-content:center}
+
+/* Order success message */
+.orderSuccess{
+  border:1px solid rgba(16,185,129,.38);
+  background:linear-gradient(135deg,rgba(16,185,129,.13),rgba(16,185,129,.04));
+  border-radius:var(--r-md);padding:22px 18px;text-align:center;
+  animation:pageFade var(--t-med) var(--ease) both;
+}
+.orderSuccessIcon{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(16,185,129,.18);border:2px solid rgba(16,185,129,.45);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;font-weight:900;color:#10b981;
+  margin:0 auto 14px;
+}
+
+/* Mobile: stack columns */
+@media(max-width:900px){
+  .designerLayout{grid-template-columns:1fr}
+  .designerPreviewCol{position:static}
+  #page-design .designerPreviewCard #stPreviewBox.previewBox{min-height:300px;height:340px}
+}
+@media(max-width:600px){
+  .dsSectionBody{padding:4px 14px 14px;gap:11px}
+  .dsSection summary.dsSectionHead{padding:13px 14px}
+  #page-design .designerPreviewCard #stPreviewBox.previewBox{min-height:260px;height:290px}
+  .orderSuccessIcon{width:44px;height:44px;font-size:22px}
+}

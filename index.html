@@ -295,324 +295,357 @@
       </div>
     </section>
 
-    <!-- STICKERS -->
+    <!-- STICKERS DESIGNER -->
     <section class="page active" id="page-design" data-page="design">
       <div class="pageHead">
         <h1 data-i18n="design.title">DESIGN</h1>
         <p class="muted" data-i18n="design.description">A clean sticker designer with live preview and studio-safe limits.</p>
-        <div class="noticeBox betaNotice" data-i18n="design.betaNotice">⚠️ Beta designer: orders are not accepted through the website yet. Use it for visual representation and price estimation only.</div>
       </div>
 
-      <div class="designerStack">
+      <div class="designerLayout">
 
-        <!-- LIVE PREVIEW (full width, on top) -->
-        <div class="card designerPreviewCard">
-          <div class="designerTopRow">
-            <div>
-              <h2 data-i18n="design.previewTitle">Live preview</h2>
-              <p class="muted small" data-i18n="design.previewHint">Preview shows text/color and a thumbnail of uploaded artwork.</p>
-            </div>
-            <div style="display:flex;align-items:center;gap:10px">
-              <div class="previewRuler">
-                <span id="stRulerText">~40 cm</span>
+        <!-- LEFT: live preview — sticky on desktop -->
+        <div class="designerPreviewCol">
+          <div class="card designerPreviewCard">
+            <div class="designerTopRow">
+              <div>
+                <h2 data-i18n="design.previewTitle">Live preview</h2>
+                <p class="muted small" data-i18n="design.previewHint">All changes update instantly.</p>
               </div>
-              <div class="canvasTools" aria-label="Canvas controls">
-                <button type="button" class="toolBtn" id="stGridToggle" title="Toggle grid">Grid</button>
-                <button type="button" class="toolBtn" id="stWhiteBgToggle" title="Toggle white preview background">White BG</button>
-                <button type="button" class="toolBtn" id="stZoomOut" title="Zoom out">−</button>
-                <button type="button" class="toolBtn" id="stZoomReset" title="Reset view">Reset</button>
-                <button type="button" class="toolBtn" id="stZoomIn" title="Zoom in">+</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="previewWrap">
-            <div class="previewBox" id="stPreviewBox" aria-label="Sticker preview canvas">
-              <div class="previewStage">
-                <div class="gridOverlay" id="stGridOverlay" aria-hidden="true"></div>
-                <!-- Pan layer moves the whole canvas; children stay centered within it -->
-                <div class="panLayer" id="stPanLayer">
-                  <div class="bgPreview" id="stBgPreview" aria-hidden="true"></div>
-                  <div class="layersPreview" id="stLayersPreview"></div>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <div class="previewRuler"><span id="stRulerText">~10 cm</span></div>
+                <div class="canvasTools" aria-label="Canvas controls">
+                  <button type="button" class="toolBtn" id="stGridToggle" title="Toggle grid">Grid</button>
+                  <button type="button" class="toolBtn" id="stWhiteBgToggle" title="Toggle white background">White BG</button>
+                  <button type="button" class="toolBtn" id="stZoomOut" title="Zoom out">−</button>
+                  <button type="button" class="toolBtn" id="stZoomReset" title="Reset view">↺</button>
+                  <button type="button" class="toolBtn" id="stZoomIn" title="Zoom in">+</button>
                 </div>
               </div>
             </div>
 
-
-            <div class="finalPreviewBox" id="stFinalPreviewBox">
-              <div class="muted small">Final image that will be sent with the order:</div>
-              <img id="stFinalDesignPreview" alt="Final sticker design preview" />
-            </div>
-
-            <p class="muted small" data-i18n="design.priceNote">Estimated price updates automatically.</p>
-          </div>
-        </div>
-
-        <!-- DESIGNER OPTIONS (full width, on bottom) -->
-        <div class="card designerControlsCard">
-          <h2 data-i18n="design.orderTitle">Design your sticker</h2>
-
-          <!-- Layers: up to 5 total (Background + up to 4 sticker layers). -->
-          <div class="layerBar" id="stLayerBar" aria-label="Layers">
-            <div class="layerBtns" id="stLayerBtns"></div>
-            <div class="layerActions">
-              <button type="button" class="layerAct" id="stAddLayer" title="Add layer">+ Layer</button>
-              <button type="button" class="layerAct" id="stRemoveLayer" title="Delete current layer">Delete current layer</button>
-              <button type="button" class="layerAct" id="stResetDesign" title="Reset design">Reset</button>
-            </div>
-          </div>
-
-          <!-- Clean mode switch: buttons (no radio UI) -->
-          <div class="designerMode" id="designerMode" role="tablist" aria-label="Design mode">
-            <button class="segBtn active" type="button" data-mode="text" data-i18n="design.modeText">Text</button>
-            <button class="segBtn" type="button" data-mode="upload" data-i18n="design.modeUpload">Upload</button>
-            <input type="hidden" name="designMode" id="designMode" value="text" />
-          </div>
-
-          <form class="form" id="formStikeri" action="https://formsubmit.co/pavel_kolarov@yahoo.com" method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="orderEmail" value="pavel_kolarov@yahoo.com" />
-            <input type="hidden" name="layers" id="stLayersData" value="" />
-            <label id="stTextWrap">
-              <span data-i18n="design.form.text">Text</span>
-              <textarea name="text" id="stText" rows="2" placeholder="Example: stickers studio" maxlength="160" required></textarea>
-              <!-- Text flow: either force single line or split words to new lines (strict caps enforced in JS). -->
-              <div class="segRow" aria-label="Text layout">
-                <button class="segBtn segSmall active" type="button" id="stFlowSingle" data-flow="single">One line</button>
-                <button class="segBtn segSmall" type="button" id="stFlowWords" data-flow="words">Word per line</button>
-                <input type="hidden" id="stTextFlow" name="textFlow" value="single" />
-              </div>
-              <p class="muted small" id="stTextRuleHint">Single line (max 40 chars).</p>
-            </label>
-
-            <label id="stFileWrap" style="display:none">
-              <span data-i18n="design.form.upload">Upload artwork</span>
-              <input type="file" name="file" id="stFile" accept=".svg,image/svg+xml" />
-              <p class="muted small" id="stFileHint" data-i18n="design.form.uploadHint">Only plain SVG files are accepted. Upload is available only before the design has active content.</p>
-            </label>
-
-
-            <label id="stRotateWrap" style="display:none">
-              <span>Rotation</span>
-              <div class="rotateRow">
-                <input type="range" id="stImgRotate" name="imgRotate" min="-180" max="180" step="1" value="0" />
-                <span class="rotateVal" id="stImgRotateVal">0°</span>
-              </div>
-              <p class="muted small">Rotate the uploaded SVG.</p>
-            </label>
-
-
-            <label id="stScaleWrap" style="display:none">
-              <span>Scale</span>
-              <div class="rotateRow">
-                <input type="range" id="stImgScale" name="imgScale" min="20" max="300" step="1" value="100" />
-                <span class="rotateVal" id="stImgScaleVal">100%</span>
-              </div>
-              <p class="muted small">Scale the uploaded SVG.</p>
-            </label>
-
-            <div class="row2">
-              <label>
-                <span>Общ размер / Whole sticker width (cm)</span>
-                <input type="number" name="widthCm" id="stWidth" min="5" max="200" value="10" required />
-                <p class="muted small" id="stSizeHint">Общ размер — променя всички слоеве заедно.</p>
-              </label>
-              <label>
-                <span>Current layer width (cm)</span>
-                <input type="number" name="layerWidthCm" id="stLayerWidth" min="1" max="200" value="10" required />
-                <p class="muted small">Size for selected layer only / размер само за текущия слой.</p>
-              </label>
-            </div>
-
-            <div class="row2">
-              <label>
-                <span data-i18n="design.form.quantity">Quantity</span>
-                <div class="qtyBlock">
-                  <input type="number" inputmode="numeric" name="quantity" id="stQty" min="1" value="50" required />
-                  <p class="muted small" id="stQtyHint"></p>
-                </div>
-              </label>
-</div>
-
-            <div class="row2">
-              <label>
-                <span data-i18n="design.form.font">Font</span>
-                <div class="fontRow">
-                  <select name="font" id="stFont" class="jsCustomSelect" required>
-                    <optgroup label="Studio" data-i18n-label="common.studio">
-                      <option value="Inter" selected>Inter</option>
-                      <option value="Arial">Arial</option>
-                      <option value="Helvetica">Helvetica</option>
-                      <option value="Verdana">Verdana</option>
-                      <option value="Tahoma">Tahoma</option>
-                      <option value="Trebuchet MS">Trebuchet MS</option>
-                      <option value="Georgia">Georgia</option>
-                      <option value="Times New Roman">Times New Roman</option>
-                      <option value="Impact">Impact</option>
-                      <option value="Courier New">Courier New</option>
-                      <option value="Montserrat">Montserrat</option>
-                      <option value="Poppins">Poppins</option>
-                      <option value="Raleway">Raleway</option>
-                      <option value="Nunito">Nunito</option>
-                      <option value="Rubik">Rubik</option>
-                      <option value="Space Grotesk">Space Grotesk</option>
-                      <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
-                      <option value="DM Sans">DM Sans</option>
-                      <option value="Manrope">Manrope</option>
-                      <option value="Urbanist">Urbanist</option>
-                      <option value="Figtree">Figtree</option>
-                      <option value="Work Sans">Work Sans</option>
-                      <option value="JetBrains Mono">JetBrains Mono</option>
-                      <option value="Oswald">Oswald</option>
-                      <option value="Bebas Neue">Bebas Neue</option>
-                      <option value="Kanit">Kanit</option>
-                      <option value="Fjalla One">Fjalla One</option>
-                      <option value="Anton">Anton</option>
-                      <option value="Barlow Condensed">Barlow Condensed</option>
-                    </optgroup>
-                    <optgroup label="Tuning" data-i18n-label="common.tuning">
-                      <option value="Racing Sans One">Racing Sans One</option>
-                      <option value="Black Ops One">Black Ops One</option>
-                      <option value="Teko">Teko</option>
-                      <option value="Staatliches">Staatliches</option>
-                      <option value="Saira Condensed">Saira Condensed</option>
-                      <option value="Graduate">Graduate</option>
-                      <option value="Audiowide">Audiowide</option>
-                      <option value="Oxanium">Oxanium</option>
-                      <option value="Monoton">Monoton</option>
-                    </optgroup>
-
-                    <optgroup label="Playful" data-i18n-label="common.playful">
-                      <option value="Bangers">Bangers</option>
-                      <option value="Satisfy">Satisfy</option>
-                      <option value="Pacifico">Pacifico</option>
-                      <option value="Lobster">Lobster</option>
-                    </optgroup>
-                    <optgroup label="Elegant" data-i18n-label="common.elegant">
-                      <option value="Playfair Display">Playfair Display</option>
-                      <option value="Merriweather">Merriweather</option>
-                      <option value="Cinzel">Cinzel</option>
-                      <option value="Abril Fatface">Abril Fatface</option>
-                    </optgroup>
-                  </select>
-                  <label class="uploadBtn adminOnly" title="Upload font">
-                    <input type="file" id="stFontUpload" accept=".ttf,.otf,.woff,.woff2" />
-                    <span data-i18n="common.uploadFont">Upload</span>
-                  </label>
-                </div>
-                <p class="muted small" id="stFontUploadHint"></p>
-              </label>
-
-              <label>
-                <span data-i18n="design.form.color">Color</span>
-                <select name="mainColor" id="stMainColor" class="jsCustomSelect" required></select>
-              </label>
-            </div>
-
-            <div class="row2">
-              <label>
-                <span data-i18n="design.form.background">Background</span>
-                <select name="background" id="stBackground" class="jsCustomSelect" required>
-                  <option value="none" selected>None</option>
-                  <option value="circle">Circle</option>
-                  <option value="square">Square</option>
-                  <option value="rounded-square">Rounded square</option>
-                  <option value="rounded-rect">Rounded rectangle</option>
-                  <option value="rect">Rectangle</option>
-                </select>
-              </label>
-              <label>
-                <span data-i18n="design.form.finish">Finish</span>
-                <select name="finish" id="stFinish" class="jsCustomSelect" required>
-                  <option value="matte" selected>Matte</option>
-                  <option value="glossy">Glossy</option>
-                </select>
-              </label>
-              <label>
-                <span>Current layer finish</span>
-                <select name="layerFinish" id="stLayerFinish" class="jsCustomSelect">
-                  <option value="matte" selected>Matte</option>
-                  <option value="glossy">Glossy</option>
-                </select>
-                <p class="muted small">Optional: override finish only for selected layer.</p>
-              </label>
-            </div>
-
-            <!-- Background-only options appear when background is not none -->
-            <div class="bgOptions" id="stBgOptions" style="display:none">
-              <div class="row2">
-                <label>
-                  <span data-i18n="design.form.bgColor">Background color</span>
-                  <select name="bgColor" id="stBgColor" class="jsCustomSelect"></select>
-                </label>
-                <label>
-                  <span data-i18n="design.form.bgSize">Background width</span>
-                  <div class="inlineInput">
-                    <input type="number" name="bgScaleX" id="stBgScaleX" min="10" max="800" step="1" value="110" />
-                    <span class="suffix">%</span>
+            <div class="previewWrap">
+              <div class="previewBox" id="stPreviewBox" aria-label="Sticker preview canvas">
+                <div class="previewStage">
+                  <div class="gridOverlay" id="stGridOverlay" aria-hidden="true"></div>
+                  <div class="panLayer" id="stPanLayer">
+                    <div class="bgPreview" id="stBgPreview" aria-hidden="true"></div>
+                    <div class="layersPreview" id="stLayersPreview"></div>
                   </div>
-                </label>
+                </div>
               </div>
-              <div class="row2">
-                <label>
-                  <span data-i18n="design.form.bgFinish">Background finish</span>
-                  <select name="bgFinish" id="stBgFinish" class="jsCustomSelect">
-                    <option value="matte" selected>Matte</option>
-                    <option value="glossy">Glossy</option>
-                  </select>
-                </label>
-                <label>
-                  <span data-i18n="design.form.bgSize">Background height</span>
-                  <div class="inlineInput">
-                    <input type="number" name="bgScaleY" id="stBgScaleY" min="10" max="800" step="1" value="110" />
-                    <span class="suffix">%</span>
-                  </div>
-                </label>
+
+              <div class="finalPreviewBox" id="stFinalPreviewBox">
+                <div class="muted small">Export preview (sent with order):</div>
+                <img id="stFinalDesignPreview" alt="Final sticker design preview" />
               </div>
             </div>
 
-            <div class="priceLine">
+            <div class="priceLine" style="margin-top:14px">
               <div class="muted small" data-i18n="stikeri.form.estimatedPrice">Estimated price:</div>
               <div class="priceValue" id="stPrice">—</div>
             </div>
-
-            <div class="row2">
-              <label>
-                <span>Email for verification</span>
-                <input type="email" name="customer_email" id="stCustomerEmail" placeholder="your@email.com" autocomplete="email" required />
-              </label>
-              <label>
-                <span>Repeat email</span>
-                <input type="email" name="customer_email_confirm" id="stCustomerEmailConfirm" placeholder="repeat your email" autocomplete="email" required />
-              </label>
-            </div>
-            <input type="text" name="website" id="stWebsiteTrap" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0" aria-hidden="true" />
-            <input type="hidden" name="_subject" value="New stickers.studio order" />
-            <input type="hidden" name="_captcha" value="true" />
-            <input type="hidden" name="_template" value="table" />
-            <input type="hidden" name="type" value="stikeri_custom" />
-            <textarea name="order_summary" id="stOrderSummaryHidden" style="display:none"></textarea>
-            <textarea name="designer_settings_text" id="stDesignerSettingsHidden" style="display:none"></textarea>
-            <textarea name="final_design_svg_text" id="stFinalSvgTextHidden" style="display:none"></textarea>
-            <input type="file" name="attachment" id="stFinalDesignFile" accept="image/svg+xml,.svg" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" aria-hidden="true" />
-
-            <label>
-              <span data-i18n="design.form.contact">Contact</span>
-              <input type="text" name="contact" placeholder="@username or +359..." required />
-            </label>
-
-            <label>
-              <span data-i18n="design.form.notes">Notes (optional)</span>
-              <textarea name="description" rows="3" placeholder="Any special instructions (optional)"></textarea>
-            </label>
-
-            <div class="btnRow">
-              <button class="btn btnPrimary" type="submit" data-i18n="design.form.submit">Order sticker</button>
-            </div>
-            <p class="muted small" id="stSubmitHint"></p>
-          </form>
+            <p class="muted small" style="margin-top:6px;text-align:right" data-i18n="design.priceNote">Updates automatically.</p>
+          </div>
         </div>
 
-      </div>
+        <!-- RIGHT: controls column -->
+        <div class="designerControlsCol">
+          <form class="dsForm" id="formStikeri">
+            <!-- Hidden state / order fields -->
+            <input type="hidden" name="layers"                  id="stLayersData"           value="" />
+            <input type="hidden" name="type"                    value="stikeri_custom" />
+            <textarea name="order_summary"         id="stOrderSummaryHidden"      style="display:none"></textarea>
+            <textarea name="designer_settings_text" id="stDesignerSettingsHidden" style="display:none"></textarea>
+            <textarea name="final_design_svg_text" id="stFinalSvgTextHidden"      style="display:none"></textarea>
+            <input type="file"   name="attachment" id="stFinalDesignFile" accept="image/svg+xml,.svg" style="position:absolute;left:-9999px;opacity:0" tabindex="-1" aria-hidden="true" />
+            <!-- Honeypot -->
+            <input type="text"   name="website"    id="stWebsiteTrap" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0" aria-hidden="true" />
+
+            <!-- ── Layers ── -->
+            <details class="dsSection" open>
+              <summary class="dsSectionHead">Layers</summary>
+              <div class="dsSectionBody">
+                <div class="layerBar" id="stLayerBar" aria-label="Layers">
+                  <div class="layerBtns" id="stLayerBtns"></div>
+                  <div class="layerActions">
+                    <button type="button" class="layerAct" id="stAddLayer"    title="Add layer">+ Layer</button>
+                    <button type="button" class="layerAct" id="stRemoveLayer" title="Delete current layer">Delete</button>
+                    <button type="button" class="layerAct" id="stResetDesign" title="Reset all">Reset</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <!-- ── Content ── -->
+            <details class="dsSection" open>
+              <summary class="dsSectionHead">Content</summary>
+              <div class="dsSectionBody">
+                <div class="designerMode" id="designerMode" role="tablist" aria-label="Design mode">
+                  <button class="segBtn active" type="button" data-mode="text"   data-i18n="design.modeText">Text</button>
+                  <button class="segBtn"        type="button" data-mode="upload" data-i18n="design.modeUpload">Upload SVG</button>
+                  <input type="hidden" name="designMode" id="designMode" value="text" />
+                </div>
+
+                <label id="stTextWrap">
+                  <span data-i18n="design.form.text">Text</span>
+                  <textarea name="text" id="stText" rows="2" placeholder="Example: stickers studio" maxlength="160" required></textarea>
+                  <div class="segRow" aria-label="Text layout">
+                    <button class="segBtn segSmall active" type="button" id="stFlowSingle" data-flow="single">One line</button>
+                    <button class="segBtn segSmall"        type="button" id="stFlowWords"  data-flow="words">Word per line</button>
+                    <input type="hidden" id="stTextFlow" name="textFlow" value="single" />
+                  </div>
+                  <p class="muted small" id="stTextRuleHint">One line (max 80 chars).</p>
+                </label>
+
+                <label id="stFileWrap" style="display:none">
+                  <span data-i18n="design.form.upload">Upload artwork</span>
+                  <input type="file" name="file" id="stFile" accept=".svg,image/svg+xml" />
+                  <p class="muted small" id="stFileHint" data-i18n="design.form.uploadHint">Only plain SVG files. Appears in preview instantly.</p>
+                </label>
+
+                <label id="stRotateWrap" style="display:none">
+                  <span>Rotation</span>
+                  <div class="rotateRow">
+                    <input type="range" id="stImgRotate" name="imgRotate" min="-180" max="180" step="1" value="0" />
+                    <span class="rotateVal" id="stImgRotateVal">0°</span>
+                  </div>
+                </label>
+
+                <label id="stScaleWrap" style="display:none">
+                  <span>Scale</span>
+                  <div class="rotateRow">
+                    <input type="range" id="stImgScale" name="imgScale" min="20" max="300" step="1" value="100" />
+                    <span class="rotateVal" id="stImgScaleVal">100%</span>
+                  </div>
+                </label>
+              </div>
+            </details>
+
+            <!-- ── Font & Color ── -->
+            <details class="dsSection" open>
+              <summary class="dsSectionHead">Font &amp; Color</summary>
+              <div class="dsSectionBody">
+                <div class="row2">
+                  <label>
+                    <span data-i18n="design.form.font">Font</span>
+                    <div class="fontRow">
+                      <select name="font" id="stFont" class="jsCustomSelect" required>
+                        <optgroup label="Studio" data-i18n-label="common.studio">
+                          <option value="Inter" selected>Inter</option>
+                          <option value="Montserrat">Montserrat</option>
+                          <option value="Poppins">Poppins</option>
+                          <option value="Raleway">Raleway</option>
+                          <option value="Nunito">Nunito</option>
+                          <option value="Rubik">Rubik</option>
+                          <option value="Space Grotesk">Space Grotesk</option>
+                          <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                          <option value="DM Sans">DM Sans</option>
+                          <option value="Manrope">Manrope</option>
+                          <option value="Urbanist">Urbanist</option>
+                          <option value="Figtree">Figtree</option>
+                          <option value="Work Sans">Work Sans</option>
+                          <option value="JetBrains Mono">JetBrains Mono</option>
+                          <option value="Oswald">Oswald</option>
+                          <option value="Bebas Neue">Bebas Neue</option>
+                          <option value="Kanit">Kanit</option>
+                          <option value="Fjalla One">Fjalla One</option>
+                          <option value="Anton">Anton</option>
+                          <option value="Barlow Condensed">Barlow Condensed</option>
+                          <option value="Arial">Arial</option>
+                          <option value="Helvetica">Helvetica</option>
+                          <option value="Verdana">Verdana</option>
+                          <option value="Georgia">Georgia</option>
+                          <option value="Impact">Impact</option>
+                          <option value="Courier New">Courier New</option>
+                          <option value="Tahoma">Tahoma</option>
+                          <option value="Trebuchet MS">Trebuchet MS</option>
+                          <option value="Times New Roman">Times New Roman</option>
+                        </optgroup>
+                        <optgroup label="Tuning" data-i18n-label="common.tuning">
+                          <option value="Racing Sans One">Racing Sans One</option>
+                          <option value="Black Ops One">Black Ops One</option>
+                          <option value="Teko">Teko</option>
+                          <option value="Staatliches">Staatliches</option>
+                          <option value="Saira Condensed">Saira Condensed</option>
+                          <option value="Graduate">Graduate</option>
+                          <option value="Audiowide">Audiowide</option>
+                          <option value="Oxanium">Oxanium</option>
+                          <option value="Monoton">Monoton</option>
+                        </optgroup>
+                        <optgroup label="Playful" data-i18n-label="common.playful">
+                          <option value="Bangers">Bangers</option>
+                          <option value="Satisfy">Satisfy</option>
+                          <option value="Pacifico">Pacifico</option>
+                          <option value="Lobster">Lobster</option>
+                        </optgroup>
+                        <optgroup label="Elegant" data-i18n-label="common.elegant">
+                          <option value="Playfair Display">Playfair Display</option>
+                          <option value="Merriweather">Merriweather</option>
+                          <option value="Cinzel">Cinzel</option>
+                          <option value="Abril Fatface">Abril Fatface</option>
+                        </optgroup>
+                      </select>
+                      <label class="uploadBtn adminOnly" title="Upload custom font">
+                        <input type="file" id="stFontUpload" accept=".ttf,.otf,.woff,.woff2" />
+                        <span data-i18n="common.uploadFont">Upload</span>
+                      </label>
+                    </div>
+                    <p class="muted small" id="stFontUploadHint"></p>
+                  </label>
+
+                  <label>
+                    <span data-i18n="design.form.color">Color</span>
+                    <select name="mainColor" id="stMainColor" class="jsCustomSelect" required></select>
+                  </label>
+                </div>
+              </div>
+            </details>
+
+            <!-- ── Size & Quantity ── -->
+            <details class="dsSection" open>
+              <summary class="dsSectionHead">Size &amp; Quantity</summary>
+              <div class="dsSectionBody">
+                <div class="row2">
+                  <label>
+                    <span>Whole sticker width (cm)</span>
+                    <input type="number" name="widthCm" id="stWidth" min="5" max="200" value="10" required />
+                    <p class="muted small" id="stSizeHint">Scales all layers together.</p>
+                  </label>
+                  <label>
+                    <span>Current layer width (cm)</span>
+                    <input type="number" name="layerWidthCm" id="stLayerWidth" min="1" max="200" value="10" required />
+                  </label>
+                </div>
+                <label>
+                  <span data-i18n="design.form.quantity">Quantity</span>
+                  <div class="qtyBlock">
+                    <input type="number" inputmode="numeric" name="quantity" id="stQty" min="1" value="50" required />
+                    <p class="muted small" id="stQtyHint"></p>
+                  </div>
+                </label>
+              </div>
+            </details>
+
+            <!-- ── Shape & Finish ── -->
+            <details class="dsSection">
+              <summary class="dsSectionHead">Shape &amp; Finish</summary>
+              <div class="dsSectionBody">
+                <div class="row2">
+                  <label>
+                    <span data-i18n="design.form.background">Background shape</span>
+                    <select name="background" id="stBackground" class="jsCustomSelect" required>
+                      <option value="none" selected>None</option>
+                      <option value="circle">Circle</option>
+                      <option value="square">Square</option>
+                      <option value="rounded-square">Rounded square</option>
+                      <option value="rounded-rect">Rounded rectangle</option>
+                      <option value="rect">Rectangle</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span data-i18n="design.form.finish">Global finish</span>
+                    <select name="finish" id="stFinish" class="jsCustomSelect" required>
+                      <option value="matte" selected>Matte</option>
+                      <option value="glossy">Glossy</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  <span>Layer finish override</span>
+                  <select name="layerFinish" id="stLayerFinish" class="jsCustomSelect">
+                    <option value="matte" selected>Matte</option>
+                    <option value="glossy">Glossy</option>
+                  </select>
+                  <p class="muted small">Optional: override finish for selected layer only.</p>
+                </label>
+
+                <div class="bgOptions" id="stBgOptions" style="display:none">
+                  <div class="row2">
+                    <label>
+                      <span data-i18n="design.form.bgColor">Background color</span>
+                      <select name="bgColor" id="stBgColor" class="jsCustomSelect"></select>
+                    </label>
+                    <label>
+                      <span>Width %</span>
+                      <div class="inlineInput">
+                        <input type="number" name="bgScaleX" id="stBgScaleX" min="10" max="800" step="1" value="110" />
+                        <span class="suffix">%</span>
+                      </div>
+                    </label>
+                  </div>
+                  <div class="row2">
+                    <label>
+                      <span data-i18n="design.form.bgFinish">Background finish</span>
+                      <select name="bgFinish" id="stBgFinish" class="jsCustomSelect">
+                        <option value="matte" selected>Matte</option>
+                        <option value="glossy">Glossy</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Height %</span>
+                      <div class="inlineInput">
+                        <input type="number" name="bgScaleY" id="stBgScaleY" min="10" max="800" step="1" value="110" />
+                        <span class="suffix">%</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <!-- ── Order Details ── -->
+            <details class="dsSection" open>
+              <summary class="dsSectionHead">Order Details</summary>
+              <div class="dsSectionBody">
+                <label>
+                  <span>Your name</span>
+                  <input type="text" name="customer_name" id="stCustomerName" placeholder="Full name" required />
+                </label>
+                <div class="row2">
+                  <label>
+                    <span>Email</span>
+                    <input type="email" name="customer_email" id="stCustomerEmail" placeholder="your@email.com" autocomplete="email" required />
+                  </label>
+                  <label>
+                    <span>Repeat email</span>
+                    <input type="email" name="customer_email_confirm" id="stCustomerEmailConfirm" placeholder="repeat email" autocomplete="email" required />
+                  </label>
+                </div>
+                <label>
+                  <span data-i18n="design.form.contact">Phone / Instagram (optional)</span>
+                  <input type="text" name="contact" id="stContact" placeholder="@username or +359..." />
+                </label>
+                <label>
+                  <span>Delivery preference</span>
+                  <select name="delivery" id="stDelivery" class="jsCustomSelect">
+                    <option value="pickup">Pickup (Sofia)</option>
+                    <option value="courier">Courier delivery</option>
+                  </select>
+                </label>
+                <label>
+                  <span data-i18n="design.form.notes">Notes (optional)</span>
+                  <textarea name="description" rows="3" placeholder="Any special instructions..."></textarea>
+                </label>
+              </div>
+            </details>
+
+            <!-- ── Submit ── -->
+            <div class="dsSubmitBlock">
+              <button class="btn btnPrimary btnFullWidth" type="submit" id="stSubmitBtn">
+                <span id="stSubmitBtnText" data-i18n="design.form.submit">Order sticker</span>
+              </button>
+              <p class="muted small" id="stSubmitHint" style="text-align:center;min-height:1.2em"></p>
+              <div class="orderSuccess" id="stOrderSuccess" style="display:none">
+                <div class="orderSuccessIcon">✓</div>
+                <p style="margin:0;font-weight:600;line-height:1.5">Your request has been sent successfully.<br><span class="muted" style="font-weight:400;font-size:13px">We will contact you soon to confirm the design and final price.</span></p>
+              </div>
+            </div>
+
+          </form>
+        </div><!-- .designerControlsCol -->
+
+      </div><!-- .designerLayout -->
     </section>
 
     <!-- SHOP (placeholder page for now) -->
