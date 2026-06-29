@@ -702,17 +702,22 @@ input[type="file"]::file-selector-button:hover{background:rgba(139,92,246,.22)}
 
 .designerPreviewCol{position:sticky;top:calc(70px + 12px)} /* below topbar */
 .designerPreviewCard{padding:18px}
-.designerPreviewCard .previewWrap{gap:10px}
+.designerPreviewCard .previewWrap{gap:14px}
 #page-design .designerPreviewCard #stPreviewBox.previewBox{width:100%;min-height:380px;height:420px;padding:12px;cursor:grab}
+
+/* Preview top row: h2 shrinks, controls wrap below if needed */
+.designerPreviewCard .designerTopRow{flex-direction:column;align-items:stretch;gap:10px}
+.designerPreviewCard .canvasTools{display:flex;flex-wrap:wrap;gap:6px}
+.designerPreviewCard .toolBtn{flex:1 1 auto;min-width:60px;padding:8px 10px;font-size:12px;min-height:38px}
 
 /* Controls column: form with no extra spacing (accordion handles spacing) */
 .dsForm{display:flex;flex-direction:column;gap:0}
 
-/* Accordion sections */
+/* Accordion sections — NO overflow:hidden so dropdown menus can escape */
 .dsSection{
   border:1px solid var(--line);border-radius:var(--r-lg);
   background:var(--surface);background-image:var(--grad-surface);
-  box-shadow:var(--shadow-sm);margin-bottom:10px;overflow:hidden;
+  box-shadow:var(--shadow-sm);margin-bottom:10px;
 }
 .dsSection summary.dsSectionHead{
   cursor:pointer;list-style:none;
